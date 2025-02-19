@@ -36,3 +36,57 @@
     transform: rotate(360deg);
   }
 }
+
+/* Center the login page and style the login box */
+.login-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f4f4;
+  padding: 20px; /* Optional: To prevent content from touching edges */
+}
+
+.login-box {
+  width: 350px; /* Adjust to desired width */
+  padding: 40px;
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-box h2 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.google-login-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-login-container button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  background-color: #4285F4; /* Google's blue */
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.google-login-container button:hover {
+  background-color: #357AE8;
+}
