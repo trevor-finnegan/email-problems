@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import '../App.css';
+import {gapi} from 'gapi-script';
 
-const Login = ({ onLoginSuccess }) => {
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleGoogleLoginSuccess = (response) => {
-    // Handle Google OAuth login success
-    console.log('Google login success', response);
-    onLoginSuccess(); // Redirect after successful Google login
+const Login = ({ setIsAuthenticated }) => {
+  const handleAuthClick = () => {
+    gapi.auth2.getAuthInstance().signIn().then(() => {
+      setIsAuthenticated(true);
+    });
   };
 
   return (
     <div className="login-page">
       <div className="login-box">
-        <h2>LOGIN</h2> {/* Header */}
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-
+        <h2>LOGIN</h2>
+        {/*errorMessage && <p className="error-message">{errorMessage}</p>*/}
+{/*}
         <div className="google-login-container">
           <GoogleLogin
             onSuccess={handleGoogleLoginSuccess}
@@ -27,6 +26,8 @@ const Login = ({ onLoginSuccess }) => {
             text={"Choose gmail account"}
           />
         </div>
+        */}
+        <button onClick={handleAuthClick}>Sign in with Google</button>
       </div>
     </div>
   );
