@@ -42,7 +42,7 @@ const getEmailBody = (payload) => {
   const bytes = new Uint8Array(
     [...binaryString].map((char) => char.charCodeAt(0))
   );
-  const decodedBody = new TextDecoder("utf-8").decode(bytes);
+  let decodedBody = new TextDecoder("utf-8").decode(bytes);
 
   // Replace inline image references (cid:image_id) with actual Base64 data
   Object.keys(images).forEach((attachmentId) => {
@@ -72,8 +72,8 @@ const EmailDetails = ({ email }) => {
     email.payload.headers.find((header) => header.name === "Date")?.value ||
     "Unknown Date";
 
-  const rawBody = getEmailBody(email.payload); // Extracts raw HTML content
-  const sanitizedBody = DOMPurify.sanitize(rawBody); // Cleans HTML
+  let rawBody = getEmailBody(email.payload); // Extracts raw HTML content
+  let sanitizedBody = DOMPurify.sanitize(rawBody); // Cleans HTML
 
   return (
     <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
