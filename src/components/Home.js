@@ -21,7 +21,7 @@ const Home = ({ setIsAuthenticated }) => {
           id: msg.id,
           data: msg,
         })),
-      },
+      }
       // Add more default folders here if needed
     ];
   };
