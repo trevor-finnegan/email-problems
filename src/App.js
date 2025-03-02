@@ -7,8 +7,8 @@ import Login from './components/Login';
 import './App.css';
 import { Navigate } from 'react-router-dom';
 
-const CLIENT_ID=process.env.REACT_APP_GOOGLE_CLIENT_ID;
-const API_KEY=process.env.REACT_APP_GOOGLE_API_KEY;
+const CLIENT_ID="100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com"
+const API_KEY="AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A"
 const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
 
 const App = () => {
