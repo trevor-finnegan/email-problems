@@ -14,7 +14,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [folders, setFolders] = useState([
     {
-      id: 'root',
+      id: 'inbox',
       name: 'Inbox',
       type: 'folder',
       items: [],
@@ -74,7 +74,7 @@ const App = () => {
         items: [],
       };
   
-      if (parentFolderId === 'root') {
+      if (parentFolderId === 'inbox') {
         // Directly modify state using a new array
         return [...prevFolders, newFolder];
       }

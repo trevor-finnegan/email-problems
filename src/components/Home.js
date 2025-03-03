@@ -6,10 +6,17 @@ import Sidebar from "./Sidebar";
 
 // Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-А";
-const CLIENT_ID = "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
+const CLIENT_ID =
+  "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
-const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onCreateFolder }) => {
+const Home = ({
+  setIsAuthenticated,
+  folders,
+  onRenameFolder,
+  onDeleteFolder,
+  onCreateFolder,
+}) => {
   const [localFolders, setLocalFolders] = useState(folders);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [, setIsGapiInitialized] = useState(false);
@@ -17,32 +24,29 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
   const navigate = useNavigate();
 
   // Function to merge Gmail data with existing folders structure
-  const mergeWithGmailData = useCallback(
-    (emails) => {
-      return localFolders.map((folder) => {
-        if (folder.id === "inbox" || folder.name === "Inbox") {
-          // Add emails to the Inbox folder
-          const emailItems = emails.map((msg) => ({
-            type: "email",
-            id: msg.id,
-            data: msg,
-          }));
+  const mergeWithGmailData = useCallback((currentFolders, emails) => {
+    return currentFolders.map((folder) => {
+      if (folder.id === "inbox" || folder.name === "Inbox") {
+        const emailItems = emails.map((msg) => ({
+          type: "email",
+          id: msg.id,
+          data: msg,
+        }));
 
-          const existingEmails = folder.items || [];
-          if(JSON.stringify(existingEmails) === JSON.stringify(emailItems)) {
-            return folder;
-          }
+        // Avoid duplicates by checking existing IDs
+        const existingIds = new Set(folder.items?.map((item) => item.id) || []);
+        const newEmails = emailItems.filter(
+          (item) => !existingIds.has(item.id)
+        );
 
-          return {
-            ...folder,
-            items: [...(folder.items || []), ...emailItems],
-          };
-        }
-        return folder;
-      });
-    },
-    [localFolders]
-  );
+        return {
+          ...folder,
+          items: [...(folder.items || []), ...newEmails],
+        };
+      }
+      return folder;
+    });
+  }, []);
 
   // Convert Gmail messages to folder structure
   const transformMessagesToFolders = useCallback((messages) => {
@@ -73,28 +77,25 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
         const messagePromises = messages.map((msg) =>
           gapi.client.gmail.users.messages.get({ userId: "me", id: msg.id })
         );
-
         const responses = await Promise.all(messagePromises);
         const emails = responses.map((res) => res.result);
 
-        // If localFolders is empty, initialize it with the transformed data
+        // Merge emails into current folders
         setLocalFolders((current) => {
           if (current.length === 0) {
             return transformMessagesToFolders(emails);
+          } else {
+            return mergeWithGmailData(current, emails);
           }
-          return current;
         });
-        const updatedFolders = mergeWithGmailData(emails);
-        return JSON.stringify(updatedFolders) === JSON.stringify(localFolders) ? localFolders : updatedFolders;
-
       }
     } catch (error) {
       console.error("Error fetching emails:", error);
     } finally {
       setLoading(false);
     }
-  }, [localFolders, mergeWithGmailData, transformMessagesToFolders]);
-
+  }, [transformMessagesToFolders, mergeWithGmailData]);
+  
   useEffect(() => {
     const storedFolders = localStorage.getItem("folders");
     if (storedFolders) {
@@ -106,7 +107,9 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
           .init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"],
+            discoveryDocs: [
+              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
+            ],
             scope: SCOPES,
           })
           .then(() => {
@@ -116,22 +119,23 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
             authInstance.isSignedIn.listen(setIsAuthenticated);
 
             // Fetch messages only after GAPI is initialized
-            if(authInstance.isSignedIn.get()) {
+            if (authInstance.isSignedIn.get()) {
               fetchMessages();
             }
-            
           })
           .catch((error) => {
             console.error("Error initializing GAPI client:", error);
             // Show an error message to the user
-            alert("Failed to initialize Google API client. Please try again later.");
+            alert(
+              "Failed to initialize Google API client. Please try again later."
+            );
           });
       });
     };
 
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
-  
+
   const handleRenameFolder = (folderId, newName) => {
     onRenameFolder(folderId, newName);
     setLocalFolders((prev) =>
@@ -140,16 +144,19 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
       )
     );
   };
-  
+
   const handleDeleteFolder = (folderId) => {
     onDeleteFolder(folderId);
     setLocalFolders((prev) => prev.filter((folder) => folder.id !== folderId));
   };
-  
+
   const handleCreateFolder = (folderName) => {
-    setLocalFolders([...localFolders, { id: Date.now(), name: folderName, items: [] }]);
-  };  
-  
+    setLocalFolders([
+      ...localFolders,
+      { id: Date.now(), name: folderName, items: [] },
+    ]);
+  };
+
   const handleSignoutClick = () => {
     const authInstance = gapi.auth2.getAuthInstance();
     if (authInstance) {
@@ -161,7 +168,7 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
     } else {
       console.error("Google API client is not initialized.");
     }
-  };  
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
@@ -187,7 +194,10 @@ const Home = ({ setIsAuthenticated, folders, onRenameFolder, onDeleteFolder, onC
       )}
 
       <Reader email={selectedEmail} />
-      <button onClick={handleSignoutClick} style={{ position: "absolute", top: 10, right: 10 }}>
+      <button
+        onClick={handleSignoutClick}
+        style={{ position: "absolute", top: 10, right: 10 }}
+      >
         Sign out
       </button>
     </div>
