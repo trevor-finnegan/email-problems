@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd"; // Import DnD components
 import Folder from "./Folder";
@@ -38,6 +39,16 @@ const Sidebar = ({
 
   return (
     <div style={{ width: "30%", borderRight: "1px solid #ccc", padding: "10px" }}>
+=======
+import React, { useState } from 'react';
+import Folder from './Folder';
+
+const Sidebar = ({ folders, onSelectEmail, selectedEmail, onRenameFolder, onDeleteFolder, onCreateFolder }) => {
+  const [newFolderName, setNewFolderName] = useState("");
+
+  return (
+    <div style={{ width: '30%', borderRight: '1px solid #ccc', padding: '10px' }}>
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
       <h2>Folders</h2>
 
       {/* Button and input for creating a new folder */}
@@ -48,6 +59,36 @@ const Sidebar = ({
           value={newFolderName}
           onChange={(e) => setNewFolderName(e.target.value)}
           style={{ marginRight: "5px", padding: "5px" }}
+<<<<<<< HEAD
+=======
+          />
+          <button 
+            onClick={() => {
+              if (newFolderName.trim() !== "") {
+                onCreateFolder(newFolderName);  
+                setNewFolderName("");           
+              } else {
+                alert("Folder name cannot be empty!");
+              }
+            }} 
+            style={{ padding: "5px 10px" }}
+          >
+            Create Folder
+          </button>
+        </div>
+
+      {/* List of folders */}
+      {folders.map((folder) => (
+        <Folder
+          key={folder.id}
+          folder={folder}
+          onSelectEmail={onSelectEmail}
+          selectedEmail={selectedEmail}
+          onRenameFolder={onRenameFolder}
+          onDeleteFolder={onDeleteFolder}
+          onCreateFolder={onCreateFolder}
+          disableActions={folder.id === "inbox" || folder.id === "Inbox"}
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
         />
         <button
           onClick={() => {

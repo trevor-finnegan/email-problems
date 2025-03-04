@@ -16,9 +16,12 @@ const Home = ({
   onRenameFolder,
   onDeleteFolder,
   onCreateFolder,
+<<<<<<< HEAD
   onMoveFolder,
   onReorderFolders,
   onMoveEmail,
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
 }) => {
   const [localFolders, setLocalFolders] = useState(folders);
   const [selectedEmail, setSelectedEmail] = useState(null);
@@ -27,8 +30,13 @@ const Home = ({
   const navigate = useNavigate();
 
   // Function to merge Gmail data with existing folders structure
+<<<<<<< HEAD
   const mergeWithGmailData = useCallback((emails) => {
     return localFolders.map((folder) => {
+=======
+  const mergeWithGmailData = useCallback((currentFolders, emails) => {
+    return currentFolders.map((folder) => {
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
       if (folder.id === "inbox" || folder.name === "Inbox") {
         const emailItems = emails.map((msg) => ({
           type: "email",
@@ -36,6 +44,7 @@ const Home = ({
           data: msg,
         }));
 
+<<<<<<< HEAD
         const existingEmails = folder.items || [];
         if (JSON.stringify(existingEmails) === JSON.stringify(emailItems)) {
           return folder;
@@ -44,11 +53,26 @@ const Home = ({
         return {
           ...folder,
           items: [...(folder.items || []), ...emailItems],
+=======
+        // Avoid duplicates by checking existing IDs
+        const existingIds = new Set(folder.items?.map((item) => item.id) || []);
+        const newEmails = emailItems.filter(
+          (item) => !existingIds.has(item.id)
+        );
+
+        return {
+          ...folder,
+          items: [...(folder.items || []), ...newEmails],
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
         };
       }
       return folder;
     });
+<<<<<<< HEAD
   }, [localFolders]);
+=======
+  }, []);
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
 
   // Convert Gmail messages to folder structure
   const transformMessagesToFolders = useCallback((messages) => {
@@ -87,7 +111,11 @@ const Home = ({
           if (current.length === 0) {
             return transformMessagesToFolders(emails);
           } else {
+<<<<<<< HEAD
             return mergeWithGmailData(emails);
+=======
+            return mergeWithGmailData(current, emails);
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
           }
         });
       }
@@ -97,7 +125,11 @@ const Home = ({
       setLoading(false);
     }
   }, [transformMessagesToFolders, mergeWithGmailData]);
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
   useEffect(() => {
     const storedFolders = localStorage.getItem("folders");
     if (storedFolders) {
@@ -127,7 +159,14 @@ const Home = ({
           })
           .catch((error) => {
             console.error("Error initializing GAPI client:", error);
+<<<<<<< HEAD
             alert("Failed to initialize Google API client. Please try again later.");
+=======
+            // Show an error message to the user
+            alert(
+              "Failed to initialize Google API client. Please try again later."
+            );
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
           });
       });
     };
@@ -176,7 +215,11 @@ const Home = ({
         <div style={{ width: "30%", padding: "10px" }}>
           <h2>Folders</h2>
           <div style={{ padding: "20px" }}>Loading emails...</div>
+<<<<<<< HEAD
           <p>Loading emails...</p>
+=======
+          <p>Loadings emails...</p>
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
         </div>
       )}
 
@@ -189,9 +232,12 @@ const Home = ({
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onCreateFolder={handleCreateFolder}
+<<<<<<< HEAD
           onMoveFolder={onMoveFolder}
           onReorderFolders={onReorderFolders}
           onMoveEmail={onMoveEmail}
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
         />
       )}
 

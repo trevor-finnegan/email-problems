@@ -10,11 +10,15 @@ const Folder = ({
   onRenameFolder,
   onDeleteFolder,
   onCreateFolder,
+<<<<<<< HEAD
   index, // Make sure `index` is passed down from parent component
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newFolderName, setNewFolderName] = useState(folder.name);
+<<<<<<< HEAD
   const isDraggable = folder.isDraggable ?? true; // Check if folder is draggable
 
   const handleRename = () => {
@@ -23,7 +27,16 @@ const Folder = ({
       setIsEditing(false);
     }
   };
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
 
+  const handleRename = () => {
+    if (newFolderName && newFolderName.trim() !== "") {
+      onRenameFolder(folder.id, newFolderName.trim());
+      setIsEditing(false);
+    }
+  };
+  
   return (
     <div style={{ marginLeft: `${level * 15}px` }}>
       <div
@@ -57,6 +70,7 @@ const Folder = ({
           </span>
         )}
         {folder.name !== "Inbox" && (
+<<<<<<< HEAD
           <>
             <button onClick={() => setIsEditing(true)} style={{ marginLeft: "10px" }}>
               Rename
@@ -68,6 +82,20 @@ const Folder = ({
         )}
       </div>
 
+=======
+        <>
+        <button onClick={() => setIsEditing(true)} style={{ marginLeft: "10px" }}>
+          Rename
+        </button>
+        <button onClick={() => onDeleteFolder(folder.id)} style={{ marginLeft: "10px" }}>
+          Delete
+        </button>
+        </>
+      )}
+      </div>
+
+
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
       {isExpanded &&
         folder.items?.map((item, index) =>
           item.type === "folder" ? (
@@ -80,7 +108,10 @@ const Folder = ({
               onRenameFolder={onRenameFolder}
               onDeleteFolder={onDeleteFolder}
               onCreateFolder={onCreateFolder}
+<<<<<<< HEAD
               index={index} // Pass down index
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
             />
           ) : (
             <Email
@@ -91,6 +122,7 @@ const Folder = ({
             />
           )
         )}
+<<<<<<< HEAD
 
       <Draggable draggableId={folder.id.toString()} index={index} isDragDisabled={!isDraggable}>
         {(provided) => (
@@ -194,6 +226,8 @@ const Folder = ({
           </div>
         )}
       </Draggable>
+=======
+>>>>>>> 85573e088014bef794398a5be175ac23a772b549
     </div>
   );
 };
