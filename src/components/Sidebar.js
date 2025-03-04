@@ -1,7 +1,6 @@
-<<<<<<< HEAD
-import React, { useState } from "react";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd"; // Import DnD components
-import Folder from "./Folder";
+import React, { useState } from 'react';
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import Folder from './Folder';
 
 const Sidebar = ({
   folders,
@@ -16,42 +15,32 @@ const Sidebar = ({
 }) => {
   const [newFolderName, setNewFolderName] = useState("");
 
+  // Drag and drop handling
   const handleDragEnd = (result) => {
     const { source, destination, draggableId, type } = result;
 
-    // If dropped outside the list, do nothing
-    if (!destination) return;
+    if (!destination) return; // Dropped outside the list, do nothing
 
-    // Handle folder movement
     if (type === "folder") {
       if (source.droppableId === destination.droppableId) {
-        onReorderFolders(draggableId, destination.index); // Reorder within the same folder
+        // Reorder within the same folder
+        onReorderFolders(draggableId, destination.index);
       } else {
-        onMoveFolder(draggableId, destination.droppableId); // Move to a new parent folder
+        // Move folder to a new parent folder
+        onMoveFolder(draggableId, destination.droppableId);
       }
     }
 
-    // Handle email movement
     if (type === "email") {
       onMoveEmail(draggableId, source.droppableId, destination.droppableId);
     }
   };
 
   return (
-    <div style={{ width: "30%", borderRight: "1px solid #ccc", padding: "10px" }}>
-=======
-import React, { useState } from 'react';
-import Folder from './Folder';
-
-const Sidebar = ({ folders, onSelectEmail, selectedEmail, onRenameFolder, onDeleteFolder, onCreateFolder }) => {
-  const [newFolderName, setNewFolderName] = useState("");
-
-  return (
     <div style={{ width: '30%', borderRight: '1px solid #ccc', padding: '10px' }}>
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
       <h2>Folders</h2>
 
-      {/* Button and input for creating a new folder */}
+      {/* Folder creation */}
       <div style={{ marginBottom: "10px" }}>
         <input
           type="text"
@@ -59,42 +48,12 @@ const Sidebar = ({ folders, onSelectEmail, selectedEmail, onRenameFolder, onDele
           value={newFolderName}
           onChange={(e) => setNewFolderName(e.target.value)}
           style={{ marginRight: "5px", padding: "5px" }}
-<<<<<<< HEAD
-=======
-          />
-          <button 
-            onClick={() => {
-              if (newFolderName.trim() !== "") {
-                onCreateFolder(newFolderName);  
-                setNewFolderName("");           
-              } else {
-                alert("Folder name cannot be empty!");
-              }
-            }} 
-            style={{ padding: "5px 10px" }}
-          >
-            Create Folder
-          </button>
-        </div>
-
-      {/* List of folders */}
-      {folders.map((folder) => (
-        <Folder
-          key={folder.id}
-          folder={folder}
-          onSelectEmail={onSelectEmail}
-          selectedEmail={selectedEmail}
-          onRenameFolder={onRenameFolder}
-          onDeleteFolder={onDeleteFolder}
-          onCreateFolder={onCreateFolder}
-          disableActions={folder.id === "inbox" || folder.id === "Inbox"}
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
         />
         <button
           onClick={() => {
             if (newFolderName.trim() !== "") {
-              onCreateFolder(newFolderName);
-              setNewFolderName(""); // Reset after creation
+              onCreateFolder(newFolderName); // Create under inbox by default
+              setNewFolderName("");
             } else {
               alert("Folder name cannot be empty!");
             }
@@ -119,8 +78,11 @@ const Sidebar = ({ folders, onSelectEmail, selectedEmail, onRenameFolder, onDele
                   onRenameFolder={onRenameFolder}
                   onDeleteFolder={onDeleteFolder}
                   onCreateFolder={onCreateFolder}
-                  index={index} // Pass index for drag-and-drop
-                  disableActions={folder.id === "inbox" || folder.id === "Inbox"}
+                  onMoveFolder={onMoveFolder}
+                  onReorderFolders={onReorderFolders}
+                  onMoveEmail={onMoveEmail}
+                  index={index}
+                  disableActions={folder.id === "inbox"}
                 />
               ))}
               {provided.placeholder}

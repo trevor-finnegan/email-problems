@@ -5,9 +5,8 @@ import Reader from "./Reader";
 import Sidebar from "./Sidebar";
 
 // Access environment variables
-const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-А";
-const CLIENT_ID =
-  "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
+const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
+const CLIENT_ID = "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
 const Home = ({
@@ -16,12 +15,9 @@ const Home = ({
   onRenameFolder,
   onDeleteFolder,
   onCreateFolder,
-<<<<<<< HEAD
   onMoveFolder,
   onReorderFolders,
   onMoveEmail,
-=======
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
 }) => {
   const [localFolders, setLocalFolders] = useState(folders);
   const [selectedEmail, setSelectedEmail] = useState(null);
@@ -29,14 +25,9 @@ const Home = ({
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Function to merge Gmail data with existing folders structure
-<<<<<<< HEAD
-  const mergeWithGmailData = useCallback((emails) => {
-    return localFolders.map((folder) => {
-=======
+  // Function to merge Gmail data with existing folders
   const mergeWithGmailData = useCallback((currentFolders, emails) => {
     return currentFolders.map((folder) => {
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
       if (folder.id === "inbox" || folder.name === "Inbox") {
         const emailItems = emails.map((msg) => ({
           type: "email",
@@ -44,37 +35,17 @@ const Home = ({
           data: msg,
         }));
 
-<<<<<<< HEAD
-        const existingEmails = folder.items || [];
-        if (JSON.stringify(existingEmails) === JSON.stringify(emailItems)) {
-          return folder;
-        }
-
-        return {
-          ...folder,
-          items: [...(folder.items || []), ...emailItems],
-=======
-        // Avoid duplicates by checking existing IDs
+        // Avoid duplicates
         const existingIds = new Set(folder.items?.map((item) => item.id) || []);
-        const newEmails = emailItems.filter(
-          (item) => !existingIds.has(item.id)
-        );
+        const newEmails = emailItems.filter((item) => !existingIds.has(item.id));
 
-        return {
-          ...folder,
-          items: [...(folder.items || []), ...newEmails],
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
-        };
+        return { ...folder, items: [...(folder.items || []), ...newEmails] };
       }
       return folder;
     });
-<<<<<<< HEAD
-  }, [localFolders]);
-=======
   }, []);
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
 
-  // Convert Gmail messages to folder structure
+  // Convert Gmail messages into a structured folder format
   const transformMessagesToFolders = useCallback((messages) => {
     return [
       {
@@ -89,7 +60,7 @@ const Home = ({
     ];
   }, []);
 
-  // Wrap fetchMessages in useCallback
+  // Fetch Gmail messages
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     try {
@@ -106,16 +77,12 @@ const Home = ({
         const responses = await Promise.all(messagePromises);
         const emails = responses.map((res) => res.result);
 
-        // Merge emails into current folders
+        // Merge into local folders
         setLocalFolders((current) => {
-          if (current.length === 0) {
+          if (current.lenght === 0){
             return transformMessagesToFolders(emails);
-          } else {
-<<<<<<< HEAD
-            return mergeWithGmailData(emails);
-=======
-            return mergeWithGmailData(current, emails);
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
+          } else{
+            return mergeWithGmailData(current, emails)
           }
         });
       }
@@ -125,48 +92,35 @@ const Home = ({
       setLoading(false);
     }
   }, [transformMessagesToFolders, mergeWithGmailData]);
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
   useEffect(() => {
     const storedFolders = localStorage.getItem("folders");
     if (storedFolders) {
       setLocalFolders(JSON.parse(storedFolders));
     }
+
     const initClient = () => {
       gapi.load("client:auth2", () => {
         gapi.client
           .init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
-            discoveryDocs: [
-              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
-            ],
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"],
             scope: SCOPES,
           })
           .then(() => {
-            setIsGapiInitialized(true); // Mark GAPI as initialized
+            setIsGapiInitialized(true);
             const authInstance = gapi.auth2.getAuthInstance();
             setIsAuthenticated(authInstance.isSignedIn.get());
             authInstance.isSignedIn.listen(setIsAuthenticated);
 
-            // Fetch messages only after GAPI is initialized
             if (authInstance.isSignedIn.get()) {
               fetchMessages();
             }
           })
           .catch((error) => {
             console.error("Error initializing GAPI client:", error);
-<<<<<<< HEAD
             alert("Failed to initialize Google API client. Please try again later.");
-=======
-            // Show an error message to the user
-            alert(
-              "Failed to initialize Google API client. Please try again later."
-            );
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
           });
       });
     };
@@ -174,12 +128,11 @@ const Home = ({
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
 
+  // Handlers for folder management
   const handleRenameFolder = (folderId, newName) => {
     onRenameFolder(folderId, newName);
     setLocalFolders((prev) =>
-      prev.map((folder) =>
-        folder.id === folderId ? { ...folder, name: newName } : folder
-      )
+      prev.map((folder) => (folder.id === folderId ? { ...folder, name: newName } : folder))
     );
   };
 
@@ -191,15 +144,27 @@ const Home = ({
   const handleCreateFolder = (folderName) => {
     setLocalFolders([
       ...localFolders,
-      { id: Date.now(), name: folderName, items: [] },
+      {id: Date.now(), name: folderName, items: [] },
     ]);
+  };
+
+  const handleMoveFolder = (folderId, newParentId) => {
+    onMoveFolder(folderId, newParentId);
+  };
+
+  const handleReorderFolders = (folderId, newIndex) => {
+    onReorderFolders(folderId, newIndex);
+  };
+
+  const handleMoveEmail = (emailId, sourceFolderId, destinationFolderId) => {
+    onMoveEmail(emailId, sourceFolderId, destinationFolderId);
   };
 
   const handleSignoutClick = () => {
     const authInstance = gapi.auth2.getAuthInstance();
     if (authInstance) {
       authInstance.signOut().then(() => {
-        localStorage.removeItem("folders"); // Clear saved folders
+        localStorage.removeItem("folders");
         setIsAuthenticated(false);
         navigate("/");
       });
@@ -210,21 +175,12 @@ const Home = ({
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Loading indicator positioned in the sidebar area */}
-      {loading && (
+      {loading ? (
         <div style={{ width: "30%", padding: "10px" }}>
           <h2>Folders</h2>
           <div style={{ padding: "20px" }}>Loading emails...</div>
-<<<<<<< HEAD
-          <p>Loading emails...</p>
-=======
-          <p>Loadings emails...</p>
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
         </div>
-      )}
-
-      {/* Only show Sidebar when not loading */}
-      {!loading && (
+      ) : (
         <Sidebar
           folders={localFolders}
           onSelectEmail={setSelectedEmail}
@@ -232,20 +188,14 @@ const Home = ({
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onCreateFolder={handleCreateFolder}
-<<<<<<< HEAD
-          onMoveFolder={onMoveFolder}
-          onReorderFolders={onReorderFolders}
-          onMoveEmail={onMoveEmail}
-=======
->>>>>>> 85573e088014bef794398a5be175ac23a772b549
+          onMoveFolder={handleMoveFolder}
+          onReorderFolders={handleReorderFolders}
+          onMoveEmail={handleMoveEmail}
         />
       )}
 
       <Reader email={selectedEmail} />
-      <button
-        onClick={handleSignoutClick}
-        style={{ position: "absolute", top: 10, right: 10 }}
-      >
+      <button onClick={handleSignoutClick} style={{ position: "absolute", top: 10, right: 10 }}>
         Sign out
       </button>
     </div>
