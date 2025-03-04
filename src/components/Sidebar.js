@@ -17,6 +17,11 @@ const Sidebar = ({
 
   // Drag and drop handling
   const handleDragEnd = (result) => {
+    console.log("Drag result:", {
+      source: result.source,
+      destination: result.destination,
+      type: result.type,
+    });
     const { source, destination, draggableId, type } = result;
 
     if (!destination) return; // Dropped outside the list, do nothing

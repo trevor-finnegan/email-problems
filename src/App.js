@@ -54,7 +54,7 @@ const App = () => {
   const handleRenameFolder = (folderId, newName) => {
     const renameFolder = (items) =>
       items.map((item) =>
-        item.id === folderId
+        item.id.toString() === folderId
           ? { ...item, name: newName }
           : item.type === "folder"
           ? { ...item, items: renameFolder(item.items) }
@@ -66,7 +66,7 @@ const App = () => {
   const handleDeleteFolder = (folderId) => {
     const deleteFolder = (items) =>
       items.filter((item) =>
-        item.id === folderId
+        item.id.toString() === folderId
           ? false
           : item.type === "folder"
           ? { ...item, items: deleteFolder(item.items) }
@@ -75,15 +75,16 @@ const App = () => {
     setFolders(deleteFolder(folders));
   };
 
-  const handleCreateFolder = (folderName) => {  // Remove parentFolderId parameter
-    setFolders(prevFolders => [
+  const handleCreateFolder = (folderName) => {
+    // Remove parentFolderId parameter
+    setFolders((prevFolders) => [
       ...prevFolders,
       {
         id: Date.now().toString(),
         name: folderName,
         type: "folder",
         items: [],
-      }
+      },
     ]);
   };
 
@@ -95,15 +96,20 @@ const App = () => {
     sourceIndex,
     destIndex
   ) => {
-    if (folderId === "inbox") return;
-
     setFolders((prevFolders) => {
       let movedFolder = null;
 
-      // First remove from source parent
+      // 1. Remove from source
       const removeFromSource = (items) => {
+        // Handle root as source
+        if (sourceParentId === "root") {
+          const newItems = [...items];
+          [movedFolder] = newItems.splice(sourceIndex, 1);
+          return newItems;
+        }
+
         return items.map((item) => {
-          if (item.id === sourceParentId) {
+          if (item.id.toString() === sourceParentId) {
             const newItems = [...item.items];
             [movedFolder] = newItems.splice(sourceIndex, 1);
             return { ...item, items: newItems };
@@ -115,10 +121,17 @@ const App = () => {
         });
       };
 
-      // Then add to destination parent
+      // 2. Add to destination
       const addToDestination = (items) => {
+        // Handle root as destination
+        if (destParentId === "root") {
+          const newItems = [...items];
+          newItems.splice(destIndex, 0, movedFolder);
+          return newItems;
+        }
+
         return items.map((item) => {
-          if (item.id === destParentId) {
+          if (item.id.toString() === destParentId) {
             const newItems = [...item.items];
             newItems.splice(destIndex, 0, movedFolder);
             return { ...item, items: newItems };
@@ -138,10 +151,18 @@ const App = () => {
   // reorder folders within the same parent
   const handleReorderFolders = (parentId, startIndex, endIndex) => {
     setFolders((prevFolders) => {
+      // Handle root-level reordering
+      if (parentId === "root") {
+        const newFolders = [...prevFolders];
+        const [moved] = newFolders.splice(startIndex, 1);
+        newFolders.splice(endIndex, 0, moved);
+        return newFolders;
+      }
+
+      // Existing nested folder logic
       const reorderItems = (items) => {
-        // Base case: if this isn't the parent folder, recurse deeper
         return items.map((item) => {
-          if (item.id === parentId) {
+          if (item.id.toString() === parentId) {
             const newItems = [...item.items];
             const [moved] = newItems.splice(startIndex, 1);
             newItems.splice(endIndex, 0, moved);
@@ -191,6 +212,11 @@ const App = () => {
     setFolders(updatedFolders);
   };
 
+  const updateFolders = (newFolders) => {
+    setFolders(newFolders);
+  };
+  
+
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       <Router>
@@ -212,6 +238,7 @@ const App = () => {
                 <Home
                   setIsAuthenticated={setIsAuthenticated}
                   folders={folders}
+                  updateFolders={updateFolders}
                   onRenameFolder={handleRenameFolder}
                   onDeleteFolder={handleDeleteFolder}
                   onCreateFolder={handleCreateFolder}

@@ -13,6 +13,7 @@ const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 const Home = ({
   setIsAuthenticated,
   folders,
+  updateFolders,
   onRenameFolder,
   onDeleteFolder,
   onCreateFolder,
@@ -20,7 +21,6 @@ const Home = ({
   onReorderFolders,
   onMoveEmail,
 }) => {
-  const [localFolders, setLocalFolders] = useState(folders);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [, setIsGapiInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,14 +80,11 @@ const Home = ({
         const responses = await Promise.all(messagePromises);
         const emails = responses.map((res) => res.result);
 
-        // Merge into local folders
-        setLocalFolders((current) => {
-          if (current.length === 0) {
-            return transformMessagesToFolders(emails);
-          } else {
-            return mergeWithGmailData(current, emails);
-          }
-        });
+        const mergedFolders =
+          folders.length === 0
+            ? transformMessagesToFolders(emails)
+            : mergeWithGmailData(folders, emails);
+        updateFolders(mergedFolders);
       }
     } catch (error) {
       console.error("Error fetching emails:", error);
@@ -98,12 +95,6 @@ const Home = ({
 
   // Home.js - fix the useEffect hooks
   useEffect(() => {
-    // Load from localStorage ON MOUNT
-    const storedFolders = localStorage.getItem("folders");
-    if (storedFolders) {
-      setLocalFolders(JSON.parse(storedFolders));
-    }
-
     const initClient = () => {
       gapi.load("client:auth2", () => {
         gapi.client
@@ -137,40 +128,49 @@ const Home = ({
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
 
-  // Add new effect for SAVING to localStorage
-  useEffect(() => {
-    // Save to localStorage WHEN LOCAL FOLDERS CHANGE
-    localStorage.setItem("folders", JSON.stringify(localFolders));
-  }, [localFolders]); // Only runs when localFolders changes
-
   // Handlers for folder management
   const handleRenameFolder = (folderId, newName) => {
     onRenameFolder(folderId, newName);
-    setLocalFolders((prev) =>
-      prev.map((folder) =>
-        folder.id === folderId ? { ...folder, name: newName } : folder
-      )
-    );
   };
 
   const handleDeleteFolder = (folderId) => {
     onDeleteFolder(folderId);
-    setLocalFolders((prev) => prev.filter((folder) => folder.id !== folderId));
   };
 
   const handleCreateFolder = (folderName) => {
-    setLocalFolders([
-      ...localFolders,
-      { id: Date.now(), name: folderName, items: [] },
-    ]);
+    onCreateFolder(folderName);
   };
 
-  const handleMoveFolder = (folderId, newParentId) => {
-    onMoveFolder(folderId, newParentId);
+  const handleMoveFolder = (
+    sourceParentId,
+    destParentId,
+    folderId,
+    sourceIndex,
+    destIndex
+  ) => {
+    onMoveFolder(
+      sourceParentId,
+      destParentId,
+      folderId,
+      sourceIndex,
+      destIndex
+    );
   };
 
-  const handleReorderFolders = (folderId, newIndex) => {
-    onReorderFolders(folderId, newIndex);
+  const handleReorderFolders = (
+    sourceParentId,
+    destParentId,
+    folderId,
+    sourceIndex,
+    destIndex
+  ) => {
+    onReorderFolders(
+      sourceParentId,
+      destParentId,
+      folderId,
+      sourceIndex,
+      destIndex
+    );
   };
 
   const handleMoveEmail = (emailId, sourceFolderId, destinationFolderId) => {
@@ -199,7 +199,7 @@ const Home = ({
         </div>
       ) : (
         <Sidebar
-          folders={localFolders}
+          folders={folders}
           onSelectEmail={setSelectedEmail}
           selectedEmail={selectedEmail}
           onRenameFolder={handleRenameFolder}

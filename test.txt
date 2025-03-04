@@ -1,0 +1,20 @@
+
+> email-problems@0.1.0 start
+> react-scripts start
+
+Starting the development server...
+
+Compiled with warnings.
+
+[eslint] 
+src/components/Home.js
+  Line 94:6:  React Hook useCallback has missing dependencies: 'folders' and 'updateFolders'. Either include them or remove the dependency array. If 'updateFolders' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/components/Home.js
+  Line 94:6:  React Hook useCallback has missing dependencies: 'folders' and 'updateFolders'. Either include them or remove the dependency array. If 'updateFolders' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+webpack compiled with 1 warning
