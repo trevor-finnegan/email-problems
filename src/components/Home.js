@@ -6,7 +6,8 @@ import Sidebar from "./Sidebar";
 
 // Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
-const CLIENT_ID = "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
+const CLIENT_ID =
+  "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
 const Home = ({
@@ -37,7 +38,9 @@ const Home = ({
 
         // Avoid duplicates
         const existingIds = new Set(folder.items?.map((item) => item.id) || []);
-        const newEmails = emailItems.filter((item) => !existingIds.has(item.id));
+        const newEmails = emailItems.filter(
+          (item) => !existingIds.has(item.id)
+        );
 
         return { ...folder, items: [...(folder.items || []), ...newEmails] };
       }
@@ -79,10 +82,10 @@ const Home = ({
 
         // Merge into local folders
         setLocalFolders((current) => {
-          if (current.lenght === 0){
+          if (current.length === 0) {
             return transformMessagesToFolders(emails);
-          } else{
-            return mergeWithGmailData(current, emails)
+          } else {
+            return mergeWithGmailData(current, emails);
           }
         });
       }
@@ -93,7 +96,9 @@ const Home = ({
     }
   }, [transformMessagesToFolders, mergeWithGmailData]);
 
+  // Home.js - fix the useEffect hooks
   useEffect(() => {
+    // Load from localStorage ON MOUNT
     const storedFolders = localStorage.getItem("folders");
     if (storedFolders) {
       setLocalFolders(JSON.parse(storedFolders));
@@ -105,7 +110,9 @@ const Home = ({
           .init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"],
+            discoveryDocs: [
+              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
+            ],
             scope: SCOPES,
           })
           .then(() => {
@@ -120,7 +127,9 @@ const Home = ({
           })
           .catch((error) => {
             console.error("Error initializing GAPI client:", error);
-            alert("Failed to initialize Google API client. Please try again later.");
+            alert(
+              "Failed to initialize Google API client. Please try again later."
+            );
           });
       });
     };
@@ -128,11 +137,19 @@ const Home = ({
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
 
+  // Add new effect for SAVING to localStorage
+  useEffect(() => {
+    // Save to localStorage WHEN LOCAL FOLDERS CHANGE
+    localStorage.setItem("folders", JSON.stringify(localFolders));
+  }, [localFolders]); // Only runs when localFolders changes
+
   // Handlers for folder management
   const handleRenameFolder = (folderId, newName) => {
     onRenameFolder(folderId, newName);
     setLocalFolders((prev) =>
-      prev.map((folder) => (folder.id === folderId ? { ...folder, name: newName } : folder))
+      prev.map((folder) =>
+        folder.id === folderId ? { ...folder, name: newName } : folder
+      )
     );
   };
 
@@ -144,7 +161,7 @@ const Home = ({
   const handleCreateFolder = (folderName) => {
     setLocalFolders([
       ...localFolders,
-      {id: Date.now(), name: folderName, items: [] },
+      { id: Date.now(), name: folderName, items: [] },
     ]);
   };
 
@@ -195,7 +212,10 @@ const Home = ({
       )}
 
       <Reader email={selectedEmail} />
-      <button onClick={handleSignoutClick} style={{ position: "absolute", top: 10, right: 10 }}>
+      <button
+        onClick={handleSignoutClick}
+        style={{ position: "absolute", top: 10, right: 10 }}
+      >
         Sign out
       </button>
     </div>

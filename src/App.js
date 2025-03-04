@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { gapi } from "gapi-script";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import "./App.css";
 
-const CLIENT_ID = "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
+const CLIENT_ID =
+  "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
 const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
@@ -29,7 +35,9 @@ const App = () => {
           .init({
             apiKey: API_KEY,
             clientId: CLIENT_ID,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"],
+            discoveryDocs: [
+              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
+            ],
             scope: SCOPES,
           })
           .then(() => {
@@ -58,83 +66,99 @@ const App = () => {
   const handleDeleteFolder = (folderId) => {
     const deleteFolder = (items) =>
       items.filter((item) =>
-        item.id === folderId ? false : item.type === "folder" ? { ...item, items: deleteFolder(item.items) } : true
+        item.id === folderId
+          ? false
+          : item.type === "folder"
+          ? { ...item, items: deleteFolder(item.items) }
+          : true
       );
     setFolders(deleteFolder(folders));
   };
 
-  const handleCreateFolder = (parentFolderId, folderName) => {
-    setFolders((prevFolders) => {
-      const newFolder = {
+  const handleCreateFolder = (folderName) => {  // Remove parentFolderId parameter
+    setFolders(prevFolders => [
+      ...prevFolders,
+      {
         id: Date.now().toString(),
         name: folderName,
         type: "folder",
         items: [],
-      };  
-
-      if(parentFolderId === 'inbox'){
-        return [...prevFolders, newFolder];
       }
+    ]);
+  };
 
-      const addFolder = (items) => {
+  // move a folder to a new parent folder
+  const handleMoveFolder = (
+    sourceParentId,
+    destParentId,
+    folderId,
+    sourceIndex,
+    destIndex
+  ) => {
+    if (folderId === "inbox") return;
+
+    setFolders((prevFolders) => {
+      let movedFolder = null;
+
+      // First remove from source parent
+      const removeFromSource = (items) => {
         return items.map((item) => {
-          if(item.id === parentFolderId){
-            return { ...item, items: [...item.items, newFolder] };
+          if (item.id === sourceParentId) {
+            const newItems = [...item.items];
+            [movedFolder] = newItems.splice(sourceIndex, 1);
+            return { ...item, items: newItems };
           }
-          if(item.type === 'folder'){
-            return { ...item, items: addFolder(item.items) };
+          if (item.type === "folder") {
+            return { ...item, items: removeFromSource(item.items) };
           }
           return item;
         });
       };
 
-      return JSON.parse(JSON.stringify(addFolder(prevFolders)));
+      // Then add to destination parent
+      const addToDestination = (items) => {
+        return items.map((item) => {
+          if (item.id === destParentId) {
+            const newItems = [...item.items];
+            newItems.splice(destIndex, 0, movedFolder);
+            return { ...item, items: newItems };
+          }
+          if (item.type === "folder") {
+            return { ...item, items: addToDestination(item.items) };
+          }
+          return item;
+        });
+      };
+
+      const afterRemoval = removeFromSource(prevFolders);
+      return addToDestination(afterRemoval);
     });
   };
 
-  // 🏗️ Move a folder to a new parent folder
-  const handleMoveFolder = (folderId, newParentId) => {
-    if (folderId === "inbox") return; // Inbox cannot be moved
-
-    let movedFolder = null;
-
-    const removeFolder = (items) =>
-      items.filter((item) => {
-        if (item.id === folderId) {
-          movedFolder = item;
-          return false;
-        }
-        if (item.type === "folder") {
-          return { ...item, items: removeFolder(item.items) };
-        }
-        return true;
-      });
-
-    const updatedFolders = removeFolder(folders);
-
-    const addFolder = (items) =>
-      items.map((item) =>
-        item.id === newParentId ? { ...item, items: [...item.items, movedFolder] } : item
-      );
-
-    setFolders(addFolder(updatedFolders));
-  };
-
-  // 🔄 Reorder folders within the same parent
-  const handleReorderFolders = (folderId, newIndex) => {
+  // reorder folders within the same parent
+  const handleReorderFolders = (parentId, startIndex, endIndex) => {
     setFolders((prevFolders) => {
-      const parentFolders = [...prevFolders];
-      const folderIndex = parentFolders.findIndex((f) => f.id === folderId);
-      if (folderIndex === -1 || newIndex < 0 || newIndex >= parentFolders.length) return prevFolders;
+      const reorderItems = (items) => {
+        // Base case: if this isn't the parent folder, recurse deeper
+        return items.map((item) => {
+          if (item.id === parentId) {
+            const newItems = [...item.items];
+            const [moved] = newItems.splice(startIndex, 1);
+            newItems.splice(endIndex, 0, moved);
+            return { ...item, items: newItems };
+          }
+          if (item.type === "folder") {
+            return { ...item, items: reorderItems(item.items) };
+          }
+          return item;
+        });
+      };
 
-      const [movedFolder] = parentFolders.splice(folderIndex, 1);
-      parentFolders.splice(newIndex, 0, movedFolder);
-
-      return [...parentFolders];
+      return reorderItems(prevFolders);
     });
   };
 
-  // 📩 Move an email from one folder to another
+  // move an email from one folder to another
   const handleMoveEmail = (emailId, fromFolderId, toFolderId) => {
     if (fromFolderId === toFolderId) return;
 
@@ -158,7 +182,9 @@ const App = () => {
 
     const addEmail = (items) =>
       items.map((folder) =>
-        folder.id === toFolderId ? { ...folder, items: [...folder.items, movedEmail] } : folder
+        folder.id === toFolderId
+          ? { ...folder, items: [...folder.items, movedEmail] }
+          : folder
       );
 
     const updatedFolders = addEmail(removeEmail(folders));
@@ -171,7 +197,13 @@ const App = () => {
         <Routes>
           <Route
             path="/"
-            element={!isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/home" />}
+            element={
+              !isAuthenticated ? (
+                <Login setIsAuthenticated={setIsAuthenticated} />
+              ) : (
+                <Navigate to="/home" />
+              )
+            }
           />
           <Route
             path="/home"

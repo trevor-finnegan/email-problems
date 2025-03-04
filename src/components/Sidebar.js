@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
-import Folder from './Folder';
+import Folder from "./Folder";
 
 const Sidebar = ({
   folders,
@@ -24,10 +24,20 @@ const Sidebar = ({
     if (type === "folder") {
       if (source.droppableId === destination.droppableId) {
         // Reorder within the same folder
-        onReorderFolders(draggableId, destination.index);
+        onReorderFolders(
+          source.droppableId, // Parent folder ID
+          source.index, // Original index
+          destination.index //new index
+        );
       } else {
         // Move folder to a new parent folder
-        onMoveFolder(draggableId, destination.droppableId);
+        onMoveFolder(
+          source.droppableId, //source parent ID
+          destination.droppableId, // dest parent ID
+          draggableId, // folder ID
+          source.index, //original index
+          destination.index //new index
+        );
       }
     }
 
@@ -37,7 +47,9 @@ const Sidebar = ({
   };
 
   return (
-    <div style={{ width: '30%', borderRight: '1px solid #ccc', padding: '10px' }}>
+    <div
+      style={{ width: "30%", borderRight: "1px solid #ccc", padding: "10px" }}
+    >
       <h2>Folders</h2>
 
       {/* Folder creation */}
