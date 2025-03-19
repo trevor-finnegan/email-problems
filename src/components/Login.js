@@ -1,11 +1,27 @@
 import React from 'react';
 import '../App.css';
 import {gapi} from 'gapi-script';
+import {isUser, addUser} from '../api';
 
 const Login = ({ setIsAuthenticated }) => {
   const handleAuthClick = () => {
     gapi.auth2.getAuthInstance().signIn().then(() => {
       setIsAuthenticated(true);
+
+      const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+        
+      const email = user.getEmail();
+        
+      (async () => {
+        const exists = await isUser(email); 
+        console.log(exists);
+        
+        if (!exists) {
+          await addUser(email, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+          console.log("User added");
+        }
+      })();
+      
     });
   };
 

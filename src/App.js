@@ -10,6 +10,7 @@ import { gapi } from "gapi-script";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import "./App.css";
+import { isUser, addUser } from "./api";
 
 const CLIENT_ID =
   "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
@@ -44,6 +45,21 @@ const App = () => {
             const authInstance = gapi.auth2.getAuthInstance();
             setIsAuthenticated(authInstance.isSignedIn.get());
             authInstance.isSignedIn.listen(setIsAuthenticated);
+            if (authInstance.isSignedIn.get()) {
+              const user = authInstance.currentUser.get().getBasicProfile();
+  
+              const email = user.getEmail();
+  
+              (async () => {
+                const exists = await isUser(email); 
+                console.log(exists);
+  
+                if (!exists) {
+                  await addUser(email, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+                  console.log("User added");
+                }
+              })();
+            }
           });
       });
     };
