@@ -19,6 +19,23 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.post("/folder/updateFolderId", async (req, res) => {
+  try {
+    const { email_id, folder_id } = req.body;
+
+    const result = await pool.query(
+      "UPDATE email_app.emails SET folder_id = $1 WHERE id = $2 RETURNING *",
+      [folder_id, email_id]
+    );
+
+    res.json(result.rows[0]);
+    console.log("email with id: " + email_id + " moved to folder with id: " + folder_id);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Get emails in a specific folder
 router.get("/folder/:folderId", async (req, res) => {
   try {

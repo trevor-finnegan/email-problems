@@ -76,4 +76,13 @@ export const getID = async (email) => {
     return -1; // Assume user doesn't exist if there's an error
   }
 };
+
+export const updateFolderID = async (folderId, emailId) => {
+  const response = await fetch(`${API_URL}/emails/folder/updateFolderID`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ folder_id: folderId, email_id: emailId }),
+  });
+  return response.json();
+};
   
