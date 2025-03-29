@@ -11,11 +11,11 @@ export const addUser = async (email, password) => {
   };
 
 // Add a folder
-export const addFolder = async (userEmail, name, type, parentFolderId) => {
+export const addFolder = async (user_id, name, type, parentFolderId) => {
     const response = await fetch(`${API_URL}/folders`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_email: userEmail, name, type, parent_folder_id: parentFolderId }),
+      body: JSON.stringify({ user_id, name, type, parent_folder_id: parentFolderId }),
     });
     return response.json();
   };

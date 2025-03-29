@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import Folder from "./Folder";
+import { addFolder, getID } from "../api";
+import { gapi } from "gapi-script";
 
 const Sidebar = ({
   folders,
@@ -67,10 +69,15 @@ const Sidebar = ({
           style={{ marginRight: "5px", padding: "5px" }}
         />
         <button
-          onClick={() => {
+          onClick={async () => {
             if (newFolderName.trim() !== "") {
               onCreateFolder(newFolderName); // Create under inbox by default
               setNewFolderName("");
+              const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+              const email = user.getEmail();
+              const userID = await getID(email);
+              await addFolder(userID, newFolderName, "custom", null);
+
             } else {
               alert("Folder name cannot be empty!");
             }

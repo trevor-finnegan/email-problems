@@ -5,7 +5,8 @@ const pool = require("../db");
 // Add a new folder for a user
 router.post("/", async (req, res) => {
   try {
-    const { user_id, name, type, system_name, parent_folder_id } = req.body;
+    const { user_id, name, type, parent_folder_id } = req.body;
+    console.log(req.body);
 
     // Ensure type is either 'system' or 'custom'
     if (!["system", "custom"].includes(type)) {
@@ -19,6 +20,7 @@ router.post("/", async (req, res) => {
     );
 
     res.json(result.rows[0]);
+    console.log(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

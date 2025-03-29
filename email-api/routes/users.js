@@ -44,6 +44,7 @@ router.get("/isUser", async (req, res) => {
         );
 
         res.json({ exists: result.rows.length > 0 });
+        console.log(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
