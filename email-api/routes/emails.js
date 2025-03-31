@@ -5,14 +5,16 @@ const pool = require("../db");
 // Add a new email
 router.post("/", async (req, res) => {
   try {
-    const { sender_id, recipient_email, subject, body, folder_id } = req.body;
+    const { sender_email, google_message_id, recipient_email, subject, body, folder_id } = req.body;
+    console.log(req.body);
 
     const result = await pool.query(
-      "INSERT INTO email_app.emails (sender_id, recipient_email, subject, body, folder_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [sender_id, recipient_email, subject, body, folder_id]
+      "INSERT INTO email_app.emails (sender_email, google_message_id, recipient_email, subject, body, folder_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [sender_email, google_message_id, recipient_email, subject, body, folder_id]
     );
 
     res.json(result.rows[0]);
+    console.log(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

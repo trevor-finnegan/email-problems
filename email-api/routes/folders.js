@@ -27,6 +27,31 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/getFolderID", async (req, res) => {
+  try {
+    const { user_id, folder_name } = req.query;
+
+    if (!user_id || !folder_name) {
+      return res.status(400).json({ error: "Missing user_id or folder_name" });
+    }
+
+    const result = await pool.query(
+      "SELECT id FROM email_app.folders WHERE user_id = $1 AND name = $2",
+      [user_id, folder_name]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Folder not found" });
+    }
+
+    res.json({ folder_id: result.rows[0].id });
+    console.log("Folder ID: " + result.rows[0].id);
+  } catch (err) {
+    console.error("Error fetching folder ID:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -43,3 +68,4 @@ router.get("/:userId", async (req, res) => {
 });
 
 module.exports = router;
+

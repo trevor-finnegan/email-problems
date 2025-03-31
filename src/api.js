@@ -85,4 +85,9 @@ export const updateFolderID = async (folderId, emailId) => {
   });
   return response.json();
 };
+
+export const getFolderID = async (userId, folderName) => {
+  const response = await fetch(`${API_URL}/folders/getFolderID?user_id=${userId}&folder_name=${folderName}`);
+  return response.json();
+};
   
