@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000";
+const API_URL = "http://localhost:5001";
 
 // Add a user
 export const addUser = async (email, password) => {

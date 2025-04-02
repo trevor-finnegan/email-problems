@@ -71,6 +71,7 @@ const Sidebar = ({
       if(destinationFolder.name !== "Inbox"){
         
         const emailData = findEmailById(folders, draggableId);
+        console.log("Email Data", emailData);
 
         const sender_email = emailData.payload.headers.find(
           (header) => header.name === "From"
@@ -84,7 +85,7 @@ const Sidebar = ({
         console.log("Recipient email:", recipient_email); // Log recipient email
 
         const google_message_id = emailData.payload.headers.find(
-          (header) => header.name === "Message-ID"
+          (header) => header.name === "Message-id" || header.name === "Message-ID"
         ).value.split('<')[1].split('>')[0]; // Extract Google message ID from "Message-ID" header
         console.log("Google message ID:", google_message_id); // Log Google message ID
 
