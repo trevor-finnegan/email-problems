@@ -1,5 +1,6 @@
 import React from "react";
 import DOMPurify from "dompurify";
+import PropTypes from 'prop-types';
 
 const getEmailBody = (payload) => {
   if (!payload) return "No content available";
@@ -97,4 +98,20 @@ const EmailDetails = ({ email }) => {
   );
 };
 
+EmailDetails.propTypes = {
+  email: PropTypes.shape({
+    payload: PropTypes.shape({
+      headers: PropTypes.arrayOf(
+        PropTypes.shape({
+          name: PropTypes.string,
+          value: PropTypes.string
+        })
+      ),
+      parts: PropTypes.array,
+      body: PropTypes.object
+    })
+  })
+};
+
 export default EmailDetails;
+

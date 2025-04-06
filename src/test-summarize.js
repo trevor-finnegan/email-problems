@@ -20,4 +20,4 @@ async function testSummarize(emailId) {
 }
 
 // Test with email ID 3 (using your updated email with body)
-testSummarize(3);
+testSummarize(6);
