@@ -1,15 +1,15 @@
 const fetch = require('cross-fetch');
 
-async function testSummarize(emailId) {
+async function testRespond(emailId) {
   try {
-    const response = await fetch(`http://localhost:5001/emails/${emailId}/summarize`, {
+    const response = await fetch(`http://localhost:5001/emails/${emailId}/respond`, {
       method: 'POST'
     });
     
     const result = await response.json();
     
     if (result.success) {
-      console.log("Generated Summary:", result.summary);
+      console.log("Generated Response:", result.response);
     } else {
       console.error("Error:", result.error);
     }
@@ -18,5 +18,5 @@ async function testSummarize(emailId) {
   }
 }
 
-// Test with email ID 3 (using your updated email with body)
-testSummarize(6);
+// Test with email ID 6 (make sure it exists in your database)
+testRespond(6);
