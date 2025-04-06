@@ -1,3 +1,4 @@
+require('dotenv').config(); // Must be first line
 const express = require("express");
 const cors = require("cors");
 
@@ -16,3 +17,6 @@ app.use("/emails", require("./routes/emails"));
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Add this temporarily in server.js
+console.log('Deepseek API Key:', process.env.OPENROUTER_API_KEY ? 'Loaded' : 'Missing');

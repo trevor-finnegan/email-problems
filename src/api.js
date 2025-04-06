@@ -91,3 +91,23 @@ export const getFolderID = async (userId, folderName) => {
   return response.json();
 };
   
+export const summarizeEmail = async (emailId) => {
+  try {
+    const response = await fetch(`${API_URL}/emails/${emailId}/summarize`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Summarization failed');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Summarization error:', error);
+    return { 
+      success: false,
+      error: error.message 
+    };
+  }
+};
