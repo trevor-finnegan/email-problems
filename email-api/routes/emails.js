@@ -6,7 +6,6 @@ const pool = require("../db");
 router.post("/", async (req, res) => {
   try {
     const { sender_email, google_message_id, recipient_email, subject, body, folder_id } = req.body;
-    console.log(req.body);
 
     const result = await pool.query(
       "INSERT INTO email_app.emails (sender_email, google_message_id, recipient_email, subject, body, folder_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
@@ -14,7 +13,25 @@ router.post("/", async (req, res) => {
     );
 
     res.json(result.rows[0]);
+    console.log("Email with id " + result.rows[0].id + " added to folder with id " + folder_id + ":");
     console.log(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/emailExists", async (req, res) => {
+  try {
+    const { google_message_id } = req.query;
+
+    const result = await pool.query(
+      "SELECT * FROM email_app.emails WHERE google_message_id = $1",
+      [google_message_id]
+    );
+
+    res.json({ exists: result.rows.length > 0 });
+    console.log(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

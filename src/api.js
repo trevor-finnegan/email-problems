@@ -90,4 +90,9 @@ export const getFolderID = async (userId, folderName) => {
   const response = await fetch(`${API_URL}/folders/getFolderID?user_id=${userId}&folder_name=${folderName}`);
   return response.json();
 };
+
+export const emailExists = async (googleMessageId) => {
+  const response = await fetch(`${API_URL}/emails/emailExists?google_message_id=${googleMessageId}`);
+  return response.json();
+};
   
