@@ -1,0 +1,33 @@
+.
+├── README.md
+├── email-api
+│   ├── db.js
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── routes
+│   │   ├── emails.js
+│   │   ├── folders.js
+│   │   └── users.js
+│   └── server.js
+├── file_tree.txt
+├── package-lock.json
+├── package.json
+└── src
+    ├── App.css
+    ├── App.js
+    ├── App.test.js
+    ├── api.js
+    ├── components
+    │   ├── Email.js
+    │   ├── Folder.js
+    │   ├── Home.js
+    │   ├── Login.js
+    │   ├── Reader.js
+    │   └── Sidebar.js
+    ├── index.css
+    ├── index.jsa
+    ├── logo.svg
+    ├── reportWebVitals.js
+    └── setupTests.js
+
+5 directories, 26 files

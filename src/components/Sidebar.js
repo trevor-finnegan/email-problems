@@ -4,6 +4,59 @@ import Folder from "./Folder";
 import { addFolder, getID, getFolderID, addEmail } from "../api";
 import { gapi } from "gapi-script";
 
+// Add these helper functions at the top of the file
+const decodeBase64 = (data) => {
+  try {
+    return atob(data.replace(/-/g, '+').replace(/_/g, '/'));
+  } catch (e) {
+    console.error('Error decoding base64:', e);
+    return '';
+  }
+};
+
+const getEmailBody = (payload) => {
+  if (!payload) return "";
+
+  let bodyData = "";
+  let images = {};
+
+  const findBody = (parts) => {
+    for (let part of parts) {
+      if (part.mimeType === "text/html" && part.body?.data) {
+        bodyData = part.body.data;
+      } else if (part.mimeType === "text/plain" && part.body?.data && !bodyData) {
+        bodyData = part.body.data;
+      } else if (part.mimeType?.startsWith("image/")) {
+        images[part.body.attachmentId] = {
+          mimeType: part.mimeType,
+          data: part.body.data,
+        };
+      } else if (part.parts) {
+        findBody(part.parts);
+      }
+    }
+  };
+
+  if (payload.parts) {
+    findBody(payload.parts);
+  } else if (payload.body?.data) {
+    bodyData = payload.body.data;
+  }
+
+  if (!bodyData) return "";
+
+  const binaryString = atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
+  let decodedBody = new TextDecoder("utf-8").decode(bytes);
+
+  Object.keys(images).forEach((attachmentId) => {
+    const imageData = `data:${images[attachmentId].mimeType};base64,${images[attachmentId].data}`;
+    decodedBody = decodedBody.replace(new RegExp(`cid:${attachmentId}`, "g"), imageData);
+  });
+
+  return decodedBody;
+};
+
 const Sidebar = ({
   folders,
   onSelectEmail,
@@ -71,6 +124,7 @@ const Sidebar = ({
       if(destinationFolder.name !== "Inbox"){
         
         const emailData = findEmailById(folders, draggableId);
+        console.log("Email Data", emailData);
 
         const sender_email = emailData.payload.headers.find(
           (header) => header.name === "From"
@@ -84,7 +138,7 @@ const Sidebar = ({
         console.log("Recipient email:", recipient_email); // Log recipient email
 
         const google_message_id = emailData.payload.headers.find(
-          (header) => header.name === "Message-ID"
+          (header) => header.name === "Message-id" || header.name === "Message-ID"
         ).value.split('<')[1].split('>')[0]; // Extract Google message ID from "Message-ID" header
         console.log("Google message ID:", google_message_id); // Log Google message ID
 
@@ -93,7 +147,7 @@ const Sidebar = ({
         ).value; // Extract subject from "Subject" header
         console.log("Subject:", subject); // Log subject
 
-        const body = null; // Placeholder for email body
+        const body = getEmailBody(emailData.payload);
 
         const folder_name = destinationFolder.name; // Get the name of the destination folder
         console.log("Folder name:", folder_name); // Log folder name
@@ -108,11 +162,11 @@ const Sidebar = ({
         console.log("Folder ID:", folderID); // Log folder ID
 
         const emailDataToSend = {
-          sender_email,
-          google_message_id,
-          recipient_email,
-          subject,
-          body,
+          sender_email: sender_email,
+          google_message_id: google_message_id,
+          recipient_email: recipient_email,
+          subject: subject,
+          body: body,
           folder_id: folderID,
         };
 

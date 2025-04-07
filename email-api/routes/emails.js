@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const fetch = require('node-fetch');
 
 // Add a new email
 router.post("/", async (req, res) => {
@@ -73,3 +75,128 @@ router.get("/folder/:folderId", async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+router.post('/:id/summarize', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get email content
+    const emailRes = await pool.query(
+      'SELECT body FROM email_app.emails WHERE id = $1',
+      [id]
+    );
+
+    if (emailRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    const { body } = emailRes.rows[0];
+    
+    console.log('Using API Key:', process.env.OPENROUTER_API_KEY ? 'Exists' : 'Missing');
+
+    const prompt = "Summarize this email descriptively. Make sure all points in the email are represented, so the user does not miss information. Here is the email:"
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:5001",
+        "X-Title": "Email Client"
+      },
+      body: JSON.stringify({
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "messages": [
+          {
+            "role": "user",
+            "content": `${prompt}\n\n${body}`
+          }
+        ]
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenRouter Response:', result);
+      throw new Error(`OpenRouter error: ${result.error?.message}`);
+    }
+
+    // Return summary without storing it
+    res.json({
+      success: true,
+      summary: result.choices[0].message.content
+    });
+
+  } catch (err) {
+    console.error('Summarization error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Summarization failed'
+    });
+  }
+});
+
+
+router.post('/:id/respond', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get email content
+    const emailRes = await pool.query(
+      'SELECT body FROM email_app.emails WHERE id = $1',
+      [id]
+    );
+
+    if (emailRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    const { body } = emailRes.rows[0];
+    
+    const responsePrompt = `Generate an appropriate response to this email. Follow these guidelines: Address any questions asked in the email. Keep the response professional and concise. Maintain the original email's context. Use proper email formatting. Here is the email: ${body}`;
+
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:5001",
+        "X-Title": "Email Client"
+      },
+      body: JSON.stringify({
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "messages": [
+          {
+            "role": "user",
+            "content": responsePrompt
+          }
+        ]
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('OpenRouter Response:', result);
+      throw new Error(`OpenRouter error: ${result.error?.message}`);
+    }
+
+    // Return response draft
+    res.json({
+      success: true,
+      response: result.choices[0].message.content
+    });
+
+  } catch (err) {
+    console.error('Response generation error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Response generation failed',
+      details: err.message
+    });
+  }
+});
