@@ -25,9 +25,11 @@
     │   ├── Reader.js
     │   └── Sidebar.js
     ├── index.css
-    ├── index.jsa
+    ├── index.js
     ├── logo.svg
     ├── reportWebVitals.js
-    └── setupTests.js
+    ├── setupTests.js
+    ├── test-respond.js
+    └── test-summarize.js
 
-5 directories, 26 files
+5 directories, 28 files
