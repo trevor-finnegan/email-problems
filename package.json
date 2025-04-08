@@ -25,10 +25,14 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node ./database-scripts/start.js",
+    "start:app": "concurrently \"npm run old-start\" \"cd email-api && npm start\"",
+    "old-start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "launcher": "sh ./database-scripts/launcher.sh",
+    "launcher:win": "powershell -ExecutionPolicy Bypass -File ./database-scripts/launcher.ps1"
   },
   "eslintConfig": {
     "extends": [
@@ -52,5 +56,8 @@
   "main": "index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }
