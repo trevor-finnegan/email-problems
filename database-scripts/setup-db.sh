@@ -51,7 +51,7 @@ CREATE TABLE email_app.emails (
   search_vector TSVECTOR,
   sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   is_read BOOLEAN DEFAULT FALSE,
-  folder_id INT NOT NULL REFERENCES email_app.folders(id)
+  folder_id INT 
 );
 
 -- Attachments with secure storage
