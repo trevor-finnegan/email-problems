@@ -1,17 +1,14 @@
 const { execSync } = require('child_process');
-const os = require('os');
+const fs = require('fs');
 
 try {
-  // Run appropriate setup command
-  if (os.platform() === 'win32') {
-    console.log('Running Windows database setup...');
-    execSync('npm run launcher:win', { stdio: 'inherit' });
-  } else {
-    console.log('Running Unix database setup...');
-    execSync('npm run launcher', { stdio: 'inherit' });
+  // Check initialization
+  if (!fs.existsSync('.initialized')) {
+    console.error('Error: Database not initialized. Run "npm run init" first.');
+    process.exit(1);
   }
 
-  // Start application
+  // Start the app
   console.log('Starting application...');
   execSync('npm run start:app', { stdio: 'inherit' });
 } catch (error) {
