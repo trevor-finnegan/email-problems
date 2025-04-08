@@ -38,12 +38,19 @@ const getEmailBody = (payload) => {
 
   if (!bodyData) return "No content available";
 
-  // Decode Base64 (Gmail uses URL-safe Base64)
-  const binaryString = atob(bodyData.replace(/-/g, "+").replace(/_/g, "/"));
-  const bytes = new Uint8Array(
-    [...binaryString].map((char) => char.charCodeAt(0))
-  );
-  let decodedBody = new TextDecoder("utf-8").decode(bytes);
+  let decodedBody = "";
+
+  try {
+    // Attempt to decode assuming URL-safe base64
+    const binaryString = atob(bodyData.replace(/-/g, "+").replace(/_/g, "/"));
+    const bytes = new Uint8Array(
+      [...binaryString].map((char) => char.charCodeAt(0))
+    );
+    decodedBody = new TextDecoder("utf-8").decode(bytes);
+  } catch (e) {
+    // If decoding fails, assume it's already decoded (from DB)
+    decodedBody = bodyData;
+  }
 
   // Replace inline image references (cid:image_id) with actual Base64 data
   Object.keys(images).forEach((attachmentId) => {

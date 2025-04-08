@@ -116,3 +116,19 @@ export const summarizeEmail = async (emailId) => {
     };
   }
 };
+
+export const userEmails = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/emails/userEmails?email=${(email)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // Correctly await and return exists value
+  } catch (error) {
+    console.error("Error checking user emails:", error);
+    return []; // Assume user doesn't exist if there's an error
+  }
+}

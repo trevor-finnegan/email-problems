@@ -200,3 +200,22 @@ router.post('/:id/respond', async (req, res) => {
     });
   }
 });
+
+router.get('/userEmails', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    const result = await pool.query(
+      "SELECT * FROM email_app.emails WHERE recipient_email = $1",
+      [email]
+    );
+
+    res.json(result.rows);
+    for (let i = 0; i < result.rows.length; i++) {
+      console.log('Email with subject "' + result.rows[i].subject + '" found');
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});

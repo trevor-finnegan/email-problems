@@ -14,49 +14,6 @@ const decodeBase64 = (data) => {
   }
 };
 
-const getEmailBody = (payload) => {
-  if (!payload) return "";
-
-  let bodyData = "";
-  let images = {};
-
-  const findBody = (parts) => {
-    for (let part of parts) {
-      if (part.mimeType === "text/html" && part.body?.data) {
-        bodyData = part.body.data;
-      } else if (part.mimeType === "text/plain" && part.body?.data && !bodyData) {
-        bodyData = part.body.data;
-      } else if (part.mimeType?.startsWith("image/")) {
-        images[part.body.attachmentId] = {
-          mimeType: part.mimeType,
-          data: part.body.data,
-        };
-      } else if (part.parts) {
-        findBody(part.parts);
-      }
-    }
-  };
-
-  if (payload.parts) {
-    findBody(payload.parts);
-  } else if (payload.body?.data) {
-    bodyData = payload.body.data;
-  }
-
-  if (!bodyData) return "";
-
-  const binaryString = atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'));
-  const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
-  let decodedBody = new TextDecoder("utf-8").decode(bytes);
-
-  Object.keys(images).forEach((attachmentId) => {
-    const imageData = `data:${images[attachmentId].mimeType};base64,${images[attachmentId].data}`;
-    decodedBody = decodedBody.replace(new RegExp(`cid:${attachmentId}`, "g"), imageData);
-  });
-
-  return decodedBody;
-};
-
 const Sidebar = ({
   folders,
   onSelectEmail,
@@ -120,7 +77,7 @@ const Sidebar = ({
 
     if (type === "email") {
       onMoveEmail(draggableId, source.droppableId, destination.droppableId);
-      
+      /*
       if(destinationFolder.name !== "Inbox"){
         
         const emailData = findEmailById(folders, draggableId);
@@ -173,6 +130,7 @@ const Sidebar = ({
         await addEmail(emailDataToSend); // Send email data to the server
 
       } 
+        */
 
     }
   };
