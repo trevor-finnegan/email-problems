@@ -24,8 +24,10 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
+    "scripts": {
+    "init": "node ./database-scripts/init.js",
     "start": "node ./database-scripts/start.js",
+    "resetdb": "node ./database-scripts/reset.js",
     "start:app": "concurrently \"npm run old-start\" \"cd email-api && npm start\"",
     "old-start": "react-scripts start",
     "build": "react-scripts build",
