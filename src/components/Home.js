@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { gapi } from "gapi-script";
 import Reader from "./Reader";
 import Sidebar from "./Sidebar";
-import { emailExists, userEmails, addEmail, getID, getFolderID } from "../api";
-import { all } from "axios";
+import { emailExists, userEmails, addEmail, getFolders, getID, getEmails } from "../api";
 
 // Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
@@ -79,15 +78,10 @@ const Home = ({
       sender_email = sender_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
     } 
     console.log("Sender email:", sender_email); // Log sender email
-    
-    console.log("Sender email:", sender_email); // Log sender email
-    
-    let recipient_email = emailData.payload.headers.find(
-      (header) => header.name === "To"
-    ).value;
-    if(recipient_email.includes("<") && recipient_email.includes(">")) {
-      recipient_email = recipient_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
+
+    const authInstance = gapi.auth2.getAuthInstance();
+    const user = authInstance.currentUser.get().getBasicProfile();
+    const recipient_email = user.getEmail();
     console.log("Recipient email:", recipient_email); // Log recipient email
     
     const google_message_id = emailData.id;
@@ -191,7 +185,6 @@ const Home = ({
           foundExisting = true;
           break;
         }
-        console.log("email: ", emails[0]);
         await addEmailToDb(emails[0]);
         allEmails.push(emails[0]);
         counter++;
@@ -209,10 +202,13 @@ const Home = ({
         const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
         const email = user.getEmail();
         const dbEmails = await userEmails(email);
+        console.log("# DB emails:", dbEmails.length);
         
         // Convert DB emails to same format as Gmail emails
         const formattedDbEmails = dbEmails.map(email => ({
-          id: email.google_message_id, // or generate a unique ID
+          id: email.google_message_id,
+          type: "email",
+         
           payload: {
             headers: [
               { name: "Subject", value: email.subject },
@@ -227,7 +223,7 @@ const Home = ({
         }));
 
         for (const email of formattedDbEmails) {
-          if (!newMessageIDs.has(email.payload.headers.find(h => h.name === "Message-ID").value)) {
+          if (!newMessageIDs.has(email.id)) {
             allEmails.push(email);
           }
         }
@@ -237,10 +233,19 @@ const Home = ({
       }
 
       // Update folders with the combined emails
-      const mergedFolders =
-        folders.length === 0
-          ? transformMessagesToFolders(allEmails)
-          : mergeWithGmailData(folders, allEmails);
+      
+      let baseFolders = folders;
+      if (!folders.some(folder => folder.id === "inbox")) {
+        baseFolders = [
+          {
+            id: "inbox",
+            name: "Inbox",
+            items: [],
+          },
+          ...folders
+        ];
+      }
+      const mergedFolders = mergeWithGmailData(baseFolders, allEmails);
       updateFolders(mergedFolders);
 
     } catch (error) {
@@ -284,6 +289,60 @@ const Home = ({
 
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
+
+  useEffect(() => {
+    const fetchUserFolders = async () => {
+      try {
+        const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+        const email = user.getEmail();
+        const userID = await getID(email);
+        const userFolders = await getFolders(userID);
+        let formattedUserFolders = [];
+        for (const folder of userFolders) {
+          const currentFolderEmails = await getEmails(folder.id);
+
+          const currentFolderItems = currentFolderEmails.map((email) => ({
+            id: email.google_message_id,
+            type: "email",
+            data: {
+              id: email.google_message_id,
+              payload: {
+                headers: [
+                  { name: "Subject", value: email.subject },
+                  { name: "From", value: email.sender_email },
+                  { name: "To", value: email.recipient_email },
+                  { name: "Message-ID", value: email.google_message_id }
+                ],
+                body: {
+                  data: email.body
+                }
+              }
+            }
+            }));
+
+          formattedUserFolders.push({
+            id: folder.id,
+            name: folder.name,
+            type: "folder",
+            items: currentFolderItems,
+            isDraggable: true
+          });
+        }
+        console.log("formatted user folders:", formattedUserFolders);
+        for(const folder of formattedUserFolders) {
+          folders.push(folder);
+        }
+        console.log("folders:", folders);
+      } catch (error) {
+        console.error("Failed to fetch folders:", error);
+      }
+    };
+  
+    // Only fetch folders if none are loaded yet
+    if (folders.length === 1 && folders[0].name === "Inbox" && gapi.auth2 && gapi.auth2.getAuthInstance().isSignedIn.get()) {
+      fetchUserFolders();
+    }
+  }, [folders]);
 
   // Handlers for folder management
   const handleRenameFolder = (folderId, newName) => {
