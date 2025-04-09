@@ -90,3 +90,47 @@
 .google-login-container button:hover {
   background-color: #357AE8;
 }
+
+.email-summary-container {
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+}
+
+.summary-button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.summary-button:hover {
+  background-color: #357ab8;
+}
+
+.summary-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.summary-content {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 4px solid #4a90e2;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fde8e8;
+  border-radius: 4px;
+}

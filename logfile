@@ -1,0 +1,220 @@
+2025-04-08 15:40:48.684 EDT [48121] LOG:  starting PostgreSQL 14.17 (Homebrew) on x86_64-apple-darwin23.6.0, compiled by Apple clang version 16.0.0 (clang-1600.0.26.6), 64-bit
+2025-04-08 15:40:48.687 EDT [48121] LOG:  could not bind IPv6 address "::1": Address already in use
+2025-04-08 15:40:48.687 EDT [48121] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2025-04-08 15:40:48.687 EDT [48121] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2025-04-08 15:40:48.687 EDT [48121] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2025-04-08 15:40:48.687 EDT [48121] WARNING:  could not create listen socket for "localhost"
+2025-04-08 15:40:48.687 EDT [48121] FATAL:  could not create any TCP/IP sockets
+2025-04-08 15:40:48.687 EDT [48121] LOG:  database system is shut down
+2025-04-08 15:43:22.388 EDT [48407] LOG:  starting PostgreSQL 14.17 (Homebrew) on x86_64-apple-darwin23.6.0, compiled by Apple clang version 16.0.0 (clang-1600.0.26.6), 64-bit
+2025-04-08 15:43:22.390 EDT [48407] LOG:  listening on IPv6 address "::1", port 5432
+2025-04-08 15:43:22.390 EDT [48407] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2025-04-08 15:43:22.391 EDT [48407] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2025-04-08 15:43:22.398 EDT [48408] LOG:  database system was shut down at 2025-04-08 15:39:46 EDT
+2025-04-08 15:43:22.413 EDT [48407] LOG:  database system is ready to accept connections
+2025-04-08 16:22:14.163 EDT [50356] ERROR:  role "postgres" does not exist
+2025-04-08 16:22:14.163 EDT [50356] STATEMENT:  ALTER ROLE postgres WITH PASSWORD 'cbe6776bb5523cd74c76e92436f8a55e';
+2025-04-08 16:22:14.387 EDT [50358] FATAL:  role "postgres" does not exist
+2025-04-08 16:23:26.574 EDT [50398] ERROR:  syntax error at or near "#" at character 1
+2025-04-08 16:23:26.574 EDT [50398] STATEMENT:  # Use environment variables (never hardcode passwords!)
+	export PG_SUPERUSER_PASSWORD="$(openssl rand -hex 16)"  # Randomly generated
+	export APP_DB_USER_PASSWORD="$(openssl rand -hex 16)"
+	export DB_NAME="email_client"
+	# Create superuser and database
+	psql -d postgres <<EOF
+	
+	ALTER ROLE postgres WITH PASSWORD '$PG_SUPERUSER_PASSWORD';
+2025-04-08 16:23:26.575 EDT [50398] ERROR:  syntax error at or near "$" at character 17
+2025-04-08 16:23:26.575 EDT [50398] STATEMENT:  CREATE DATABASE $DB_NAME;
+2025-04-08 16:23:26.576 EDT [50398] ERROR:  role "email_user" already exists
+2025-04-08 16:23:26.576 EDT [50398] STATEMENT:  CREATE USER email_user WITH ENCRYPTED PASSWORD '$APP_DB_USER_PASSWORD';
+2025-04-08 16:23:26.576 EDT [50398] ERROR:  syntax error at or near "EOF" at character 1
+2025-04-08 16:23:26.576 EDT [50398] STATEMENT:  EOF
+	# Create tables in dedicated schema (not public)
+	psql -U postgres -d $DB_NAME <<EOF
+	
+	CREATE SCHEMA email_app;
+2025-04-08 16:23:26.578 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.578 EDT [50398] STATEMENT:  GRANT USAGE ON SCHEMA email_app TO email_user;
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE TABLE email_app.users (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email VARCHAR(255) UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL CHECK (LENGTH(password_hash) > 0),
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE TABLE email_app.folders (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		user_id INT NOT NULL REFERENCES email_app.users(id) ON DELETE CASCADE,
+		name VARCHAR(255) NOT NULL,
+		type VARCHAR(50) NOT NULL CHECK (type IN ('system', 'custom')),
+		system_name VARCHAR(50) CHECK (
+	    	(type = 'system' AND system_name IN ('inbox', 'sent', 'trash', 'spam')) OR
+	    	(type = 'custom' AND system_name IS NULL)
+		)
+	);
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE TABLE email_app.emails (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		sender_id INT NOT NULL REFERENCES email_app.users(id) ON DELETE CASCADE,
+		subject TEXT,
+		body TEXT,
+		search_vector TSVECTOR, 
+		sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		is_read BOOLEAN DEFAULT FALSE,
+		is_draft BOOLEAN DEFAULT FALSE, 
+		folder_id INT NOT NULL REFERENCES email_app.folders(id) ON DELETE CASCADE
+	);
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE TABLE email_app.recipients (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email_id INT NOT NULL REFERENCES email_app.emails(id) ON DELETE CASCADE,
+		recipient_email VARCHAR(255) NOT NULL,
+		recipient_type VARCHAR(10) NOT NULL CHECK (recipient_type IN ('to', 'cc', 'bcc')) 
+	);
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE TABLE email_app.attachments (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email_id INT NOT NULL REFERENCES email_app.emails(id) ON DELETE CASCADE,
+		storage_key UUID NOT NULL UNIQUE, 
+		file_name TEXT NOT NULL,
+		mime_type TEXT NOT NULL,
+		file_size BIGINT NOT NULL CHECK (file_size > 0) 
+	);
+2025-04-08 16:23:26.579 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.579 EDT [50398] STATEMENT:  CREATE INDEX idx_emails_folder_id ON email_app.emails(folder_id);
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  CREATE INDEX idx_folders_user_id ON email_app.folders(user_id);
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  CREATE INDEX idx_emails_search ON email_app.emails USING GIN(search_vector);
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  syntax error at or near "$" at character 27
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  GRANT CONNECT ON DATABASE $DB_NAME TO email_user;
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  GRANT USAGE ON SCHEMA email_app TO email_user;
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA email_app TO email_user;
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  schema "email_app" does not exist
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  GRANT USAGE ON ALL SEQUENCES IN SCHEMA email_app TO email_user;
+2025-04-08 16:23:26.580 EDT [50398] ERROR:  syntax error at or near "EOF" at character 1
+2025-04-08 16:23:26.580 EDT [50398] STATEMENT:  EOF
+	# Save credentials securely
+	echo -e "\n\033[1;32mSAVE THESE SECRETS (WON'T SHOW AGAIN):\033[0m"
+	echo "Postgres Superuser Password: $PG_SUPERUSER_PASSWORD"
+	echo "App DB User Password: $APP_DB_USER_PASSWORD"
+2025-04-08 16:23:46.193 EDT [50409] FATAL:  database "ernst" does not exist
+2025-04-08 16:24:47.922 EDT [50456] ERROR:  syntax error at or near "#" at character 1
+2025-04-08 16:24:47.922 EDT [50456] STATEMENT:  # Use environment variables (never hardcode passwords!)
+	export PG_SUPERUSER_PASSWORD="$(openssl rand -hex 16)"  # Randomly generated
+	export APP_DB_USER_PASSWORD="$(openssl rand -hex 16)"
+	export DB_NAME="email_client"
+	# Create superuser and database
+	psql -d postgres <<EOF
+	
+	ALTER ROLE postgres WITH PASSWORD '$PG_SUPERUSER_PASSWORD';
+2025-04-08 16:24:47.922 EDT [50456] ERROR:  syntax error at or near "$" at character 17
+2025-04-08 16:24:47.922 EDT [50456] STATEMENT:  CREATE DATABASE $DB_NAME;
+2025-04-08 16:24:47.923 EDT [50456] ERROR:  role "email_user" already exists
+2025-04-08 16:24:47.923 EDT [50456] STATEMENT:  CREATE USER email_user WITH ENCRYPTED PASSWORD '$APP_DB_USER_PASSWORD';
+2025-04-08 16:24:47.923 EDT [50456] ERROR:  syntax error at or near "EOF" at character 1
+2025-04-08 16:24:47.923 EDT [50456] STATEMENT:  EOF
+	# Create tables in dedicated schema (not public)
+	psql -U postgres -d $DB_NAME <<EOF
+	
+	CREATE SCHEMA email_app;
+2025-04-08 16:24:47.923 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.923 EDT [50456] STATEMENT:  GRANT USAGE ON SCHEMA email_app TO email_user;
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE TABLE email_app.users (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email VARCHAR(255) UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL CHECK (LENGTH(password_hash) > 0),
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE TABLE email_app.folders (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		user_id INT NOT NULL REFERENCES email_app.users(id) ON DELETE CASCADE,
+		name VARCHAR(255) NOT NULL,
+		type VARCHAR(50) NOT NULL CHECK (type IN ('system', 'custom')),
+		system_name VARCHAR(50) CHECK (
+	    	(type = 'system' AND system_name IN ('inbox', 'sent', 'trash', 'spam')) OR
+	    	(type = 'custom' AND system_name IS NULL)
+		)
+	);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE TABLE email_app.emails (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		sender_id INT NOT NULL REFERENCES email_app.users(id) ON DELETE CASCADE,
+		subject TEXT,
+		body TEXT,
+		search_vector TSVECTOR, 
+		sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		is_read BOOLEAN DEFAULT FALSE,
+		is_draft BOOLEAN DEFAULT FALSE, 
+		folder_id INT NOT NULL REFERENCES email_app.folders(id) ON DELETE CASCADE
+	);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE TABLE email_app.recipients (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email_id INT NOT NULL REFERENCES email_app.emails(id) ON DELETE CASCADE,
+		recipient_email VARCHAR(255) NOT NULL,
+		recipient_type VARCHAR(10) NOT NULL CHECK (recipient_type IN ('to', 'cc', 'bcc')) 
+	);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist at character 14
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE TABLE email_app.attachments (
+		id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		email_id INT NOT NULL REFERENCES email_app.emails(id) ON DELETE CASCADE,
+		storage_key UUID NOT NULL UNIQUE, 
+		file_name TEXT NOT NULL,
+		mime_type TEXT NOT NULL,
+		file_size BIGINT NOT NULL CHECK (file_size > 0) 
+	);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE INDEX idx_emails_folder_id ON email_app.emails(folder_id);
+2025-04-08 16:24:47.924 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.924 EDT [50456] STATEMENT:  CREATE INDEX idx_folders_user_id ON email_app.folders(user_id);
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  CREATE INDEX idx_emails_search ON email_app.emails USING GIN(search_vector);
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  syntax error at or near "$" at character 27
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  GRANT CONNECT ON DATABASE $DB_NAME TO email_user;
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  GRANT USAGE ON SCHEMA email_app TO email_user;
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA email_app TO email_user;
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  schema "email_app" does not exist
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  GRANT USAGE ON ALL SEQUENCES IN SCHEMA email_app TO email_user;
+2025-04-08 16:24:47.925 EDT [50456] ERROR:  syntax error at or near "EOF" at character 1
+2025-04-08 16:24:47.925 EDT [50456] STATEMENT:  EOF
+	# Save credentials securely
+	echo -e "\n\033[1;32mSAVE THESE SECRETS (WON'T SHOW AGAIN):\033[0m"
+	echo "Postgres Superuser Password: $PG_SUPERUSER_PASSWORD"
+	echo "App DB User Password: $APP_DB_USER_PASSWORD"
+2025-04-08 16:26:06.384 EDT [50483] ERROR:  database "email_client" already exists
+2025-04-08 16:26:06.384 EDT [50483] STATEMENT:  CREATE DATABASE email_client;
+2025-04-08 16:26:57.403 EDT [50537] ERROR:  database "email_client" already exists
+2025-04-08 16:26:57.403 EDT [50537] STATEMENT:  CREATE DATABASE email_client;
+2025-04-08 16:26:57.403 EDT [50537] ERROR:  role "email_user" already exists
+2025-04-08 16:26:57.403 EDT [50537] STATEMENT:  CREATE USER email_user WITH ENCRYPTED PASSWORD 'd95b2780b795d16a911bd29bbbedc064';
+2025-04-08 16:32:19.519 EDT [50751] ERROR:  database "email_client" is being accessed by other users
+2025-04-08 16:32:19.519 EDT [50751] DETAIL:  There is 1 other session using the database.
+2025-04-08 16:32:19.519 EDT [50751] STATEMENT:  DROP DATABASE IF EXISTS email_client;
+2025-04-08 20:02:52.809 EDT [51459] ERROR:  syntax error at or near "SELECT" at character 25
+2025-04-08 20:02:52.809 EDT [51459] STATEMENT:  SELECT * FROM email_app
+	SELECT * FROM email_app.folders
+	INSERT INTO email_app.folders (user_id, name, type, system_name, parent_folder_id, created_at)
+	VALUES 
+	(1, 'Inbox', 'system', 'inbox', NULL, NOW()),
+	(1, 'Sent', 'system', 'sent', NULL, NOW()),
+	(1, 'Trash', 'system', 'trash', NULL, NOW());
+2025-04-08 20:04:09.856 EDT [54845] FATAL:  database "email_app" does not exist
+2025-04-08 20:39:26.379 EDT [56950] ERROR:  column "sender_email" of relation "emails" already exists
+2025-04-08 20:39:26.379 EDT [56950] STATEMENT:  ALTER TABLE email_app.emails
+	ADD COLUMN sender_email VARCHAR(255),
+	ADD COLUMN google_message_id TEXT,
+	ADD COLUMN recipient_email VARCHAR(255);
+2025-04-08 20:40:11.320 EDT [56950] ERROR:  column "google_message_id" of relation "emails" already exists
+2025-04-08 20:40:11.320 EDT [56950] STATEMENT:  ALTER TABLE email_app.emails ADD COLUMN google_message_id TEXT;
+2025-04-08 20:40:11.323 EDT [56950] ERROR:  column "recipient_email" of relation "emails" already exists
+2025-04-08 20:40:11.323 EDT [56950] STATEMENT:  ALTER TABLE email_app.emails ADD COLUMN recipient_email VARCHAR(255);
+2025-04-09 14:46:40.340 EDT [58456] FATAL:  terminating connection due to unexpected postmaster exit

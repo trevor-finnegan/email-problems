@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { gapi } from "gapi-script";
 import Reader from "./Reader";
 import Sidebar from "./Sidebar";
-import { emailExists, userEmails, addEmail, getID, getFolderID } from "../api";
-import { all } from "axios";
 
 // Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
@@ -27,90 +25,6 @@ const Home = ({
   const [, setIsGapiInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const getEmailBody = (payload) => {
-    if (!payload) return "";
-  
-    let bodyData = "";
-    let images = {};
-  
-    const findBody = (parts) => {
-      for (let part of parts) {
-        if (part.mimeType === "text/html" && part.body?.data) {
-          bodyData = part.body.data;
-        } else if (part.mimeType === "text/plain" && part.body?.data && !bodyData) {
-          bodyData = part.body.data;
-        } else if (part.mimeType?.startsWith("image/")) {
-          images[part.body.attachmentId] = {
-            mimeType: part.mimeType,
-            data: part.body.data,
-          };
-        } else if (part.parts) {
-          findBody(part.parts);
-        }
-      }
-    };
-  
-    if (payload.parts) {
-      findBody(payload.parts);
-    } else if (payload.body?.data) {
-      bodyData = payload.body.data;
-    }
-  
-    if (!bodyData) return "";
-  
-    const binaryString = atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'));
-    const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
-    let decodedBody = new TextDecoder("utf-8").decode(bytes);
-  
-    Object.keys(images).forEach((attachmentId) => {
-      const imageData = `data:${images[attachmentId].mimeType};base64,${images[attachmentId].data}`;
-      decodedBody = decodedBody.replace(new RegExp(`cid:${attachmentId}`, "g"), imageData);
-    });
-  
-    return decodedBody;
-  };
-
-  const addEmailToDb = async (emailData) => {
-    let sender_email = emailData.payload.headers.find(
-      (header) => header.name === "From"
-    ).value; // Extract sender email from "From" header
-    if(sender_email.includes("<") && sender_email.includes(">")) {
-      sender_email = sender_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
-    console.log("Sender email:", sender_email); // Log sender email
-    
-    console.log("Sender email:", sender_email); // Log sender email
-    
-    let recipient_email = emailData.payload.headers.find(
-      (header) => header.name === "To"
-    ).value;
-    if(recipient_email.includes("<") && recipient_email.includes(">")) {
-      recipient_email = recipient_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
-    console.log("Recipient email:", recipient_email); // Log recipient email
-    
-    const google_message_id = emailData.id;
-    console.log("Google message ID:", google_message_id); // Log Google message ID
-    
-    const subject = emailData.payload.headers.find(
-      (header) => header.name === "Subject"
-    ).value; // Extract subject from "Subject" header
-    console.log("Subject:", subject); // Log subject
-    
-    const body = getEmailBody(emailData.payload);
-    
-    const emailDataToSend = {
-      sender_email: sender_email,
-      google_message_id: google_message_id,
-      recipient_email: recipient_email,
-      subject: subject,
-      body: body,
-      folder_id: null,
-    };
-    
-    await addEmail(emailDataToSend); // Send email data to the server
-  }
 
   // Function to merge Gmail data with existing folders
   const mergeWithGmailData = useCallback((currentFolders, emails) => {
@@ -153,96 +67,25 @@ const Home = ({
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     try {
-      let allEmails = [];
-      let pageToken = null;
-      let foundExisting = false;
-      const batchSize = 1; // Number of emails to fetch per batch
-      let newMessageIDs = new Set();
-      const emailLimit = 200;
-      let counter = 0;
+      const response = await gapi.client.gmail.users.messages.list({
+        userId: "me",
+        maxResults: 10,
+      });
 
-      // First, fetch emails from Gmail until we find one that exists in our DB
-      while (!foundExisting && counter < emailLimit) {
-        const params = {
-          userId: "me",
-          maxResults: batchSize,
-          ...(pageToken && { pageToken }),
-        };
-
-        const response = await gapi.client.gmail.users.messages.list(params);
-        const messages = response.result.messages || [];
-        
-        if (messages.length === 0) break;
-
-        // Fetch full details for each message
+      const messages = response.result.messages;
+      if (messages?.length > 0) {
         const messagePromises = messages.map((msg) =>
           gapi.client.gmail.users.messages.get({ userId: "me", id: msg.id })
         );
         const responses = await Promise.all(messagePromises);
         const emails = responses.map((res) => res.result);
-        
-        const messageId = emails[0].id;
-        newMessageIDs.add(messageId);
 
-        const emailExistsData = await emailExists(messageId);
-        console.log("Email exists check:", emailExistsData, messageId);
-          
-        if (messageId && emailExistsData.exists) {
-          foundExisting = true;
-          break;
-        }
-        console.log("email: ", emails[0]);
-        await addEmailToDb(emails[0]);
-        allEmails.push(emails[0]);
-        counter++;
-        
-
-        if (!foundExisting && response.result.nextPageToken) {
-          pageToken = response.result.nextPageToken;
-        } else {
-          break;
-        }
+        const mergedFolders =
+          folders.length === 0
+            ? transformMessagesToFolders(emails)
+            : mergeWithGmailData(folders, emails);
+        updateFolders(mergedFolders);
       }
-
-      // Now get all emails from our database
-      try {
-        const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-        const email = user.getEmail();
-        const dbEmails = await userEmails(email);
-        
-        // Convert DB emails to same format as Gmail emails
-        const formattedDbEmails = dbEmails.map(email => ({
-          id: email.google_message_id, // or generate a unique ID
-          payload: {
-            headers: [
-              { name: "Subject", value: email.subject },
-              { name: "From", value: email.sender_email },
-              { name: "To", value: email.recipient_email },
-              { name: "Message-ID", value: email.google_message_id }
-            ],
-            body: {
-              data: email.body
-            }
-          }
-        }));
-
-        for (const email of formattedDbEmails) {
-          if (!newMessageIDs.has(email.payload.headers.find(h => h.name === "Message-ID").value)) {
-            allEmails.push(email);
-          }
-        }
-        console.log("Fetched emails from DB:", allEmails);
-      } catch (error) {
-        console.error("Error fetching emails from database:", error);
-      }
-
-      // Update folders with the combined emails
-      const mergedFolders =
-        folders.length === 0
-          ? transformMessagesToFolders(allEmails)
-          : mergeWithGmailData(folders, allEmails);
-      updateFolders(mergedFolders);
-
     } catch (error) {
       console.error("Error fetching emails:", error);
     } finally {

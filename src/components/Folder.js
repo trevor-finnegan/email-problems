@@ -115,7 +115,18 @@ const Folder = ({
                             <Email
                               key={item.id}
                               email={item.data}
-                              onSelectEmail={onSelectEmail}
+                              onSelectEmail={(email) => {
+                                const enhancedEmail = {
+                                  ...email,
+                                  summary: "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions.",
+                                  actionItems: [
+                                    { id: 1, text: "Review Attached Document", completed: false },
+                                    { id: 2, text: "Update Project Status", completed: true },
+                                    { id: 3, text: "Schedule Follow-Up Meeting", completed: false },
+                                  ],
+                                };
+                                onSelectEmail(enhancedEmail);
+                              }}
                               isSelected={selectedEmail?.id === item.data.id}
                             />
                           </div>

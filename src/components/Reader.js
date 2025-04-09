@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import DOMPurify from "dompurify";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 const getEmailBody = (payload) => {
   if (!payload) return "No content available";
@@ -8,7 +8,6 @@ const getEmailBody = (payload) => {
   let bodyData = "";
   let images = {};
 
-  // Recursively find the HTML or plain text part
   const findBody = (parts) => {
     for (let part of parts) {
       if (part.mimeType === "text/html" && part.body.data) {
@@ -18,7 +17,7 @@ const getEmailBody = (payload) => {
         part.body.data &&
         !bodyData
       ) {
-        bodyData = part.body.data; // Fallback to plain text if no HTML
+        bodyData = part.body.data;
       } else if (part.mimeType?.startsWith("image/")) {
         images[part.body.attachmentId] = {
           mimeType: part.mimeType,
@@ -38,28 +37,13 @@ const getEmailBody = (payload) => {
 
   if (!bodyData) return "No content available";
 
-  let decodedBody = "";
-
   try {
-    // Attempt to decode assuming URL-safe base64
     const binaryString = atob(bodyData.replace(/-/g, "+").replace(/_/g, "/"));
-    const bytes = new Uint8Array(
-      [...binaryString].map((char) => char.charCodeAt(0))
-    );
-    decodedBody = new TextDecoder("utf-8").decode(bytes);
+    const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
+    return new TextDecoder("utf-8").decode(bytes);
   } catch (e) {
-    // If decoding fails, assume it's already decoded (from DB)
-    decodedBody = bodyData;
+    return bodyData;
   }
-
-  // Replace inline image references (cid:image_id) with actual Base64 data
-  Object.keys(images).forEach((attachmentId) => {
-    const imageData = `data:${images[attachmentId].mimeType};base64,${images[attachmentId].data}`;
-    const regex = new RegExp(`cid:${attachmentId}`, "g");
-    decodedBody = decodedBody.replace(regex, imageData);
-  });
-
-  return decodedBody;
 };
 
 const EmailDetails = ({ email }) => {
@@ -68,38 +52,74 @@ const EmailDetails = ({ email }) => {
   }
 
   const subject =
-    email.payload.headers.find((header) => header.name === "Subject")?.value ||
-    "No Subject";
+    email.payload?.headers?.find((h) => h.name === "Subject")?.value || "No Subject";
   const from =
-    email.payload.headers.find((header) => header.name === "From")?.value ||
-    "Unknown Sender";
+    email.payload?.headers?.find((h) => h.name === "From")?.value || "Unknown Sender";
   const to =
-    email.payload.headers.find((header) => header.name === "To")?.value ||
-    "Unknown Recipient";
+    email.payload?.headers?.find((h) => h.name === "To")?.value || "Unknown Recipient";
   const date =
-    email.payload.headers.find((header) => header.name === "Date")?.value ||
-    "Unknown Date";
+    email.payload?.headers?.find((h) => h.name === "Date")?.value || "Unknown Date";
 
-  let rawBody = getEmailBody(email.payload); // Extracts raw HTML content
-  let sanitizedBody = DOMPurify.sanitize(rawBody); // Cleans HTML
+  const rawBody = getEmailBody(email.payload);
+  const sanitizedBody = DOMPurify.sanitize(rawBody);
+
+  // Sample placeholder summary and actions (you can replace with actual props/data)
+  const summary = email.summary || "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions...";
+  const actionItems = email.actionItems || [
+    { id: 1, text: "Review Attached Document", completed: false },
+    { id: 2, text: "Update Project Status", completed: true },
+    { id: 3, text: "Schedule Follow-Up Meeting", completed: false },
+  ];
+
+  const progress = useMemo(() => {
+    if (!actionItems.length) return 0;
+    const done = actionItems.filter((a) => a.completed).length;
+    return Math.round((done / actionItems.length) * 100);
+  }, [actionItems]);
 
   return (
     <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
       <h3>{subject}</h3>
-      <p>
-        <strong>From:</strong> {from}
-      </p>
-      <p>
-        <strong>To:</strong> {to}
-      </p>
-      <p>
-        <strong>Date:</strong> {date}
-      </p>
+      <p><strong>From:</strong> {from}</p>
+      <p><strong>To:</strong> {to}</p>
+      <p><strong>Date:</strong> {date}</p>
+
       <hr />
-      {/* Render sanitized HTML */}
+      <h4>Summary:</h4>
+      <p>{summary}</p>
+
+      <h4>Action Items:</h4>
+      <ul>
+        {actionItems.map((item) => (
+          <li key={item.id}>
+            {item.completed ? "✓" : "[ ]"} {item.text}
+          </li>
+        ))}
+      </ul>
+
+      <div style={{ margin: "10px 0" }}>
+        <strong>Progress:</strong> {progress}%
+        <div style={{
+          background: "#ddd", borderRadius: "8px", overflow: "hidden", height: "20px", marginTop: "4px"
+        }}>
+          <div style={{
+            width: `${progress}%`,
+            height: "100%",
+            background: "#4caf50"
+          }} />
+        </div>
+      </div>
+
+      <div style={{ marginTop: "20px" }}>
+        <button style={{ marginRight: "10px" }}>Respond</button>
+        <button style={{ marginRight: "10px" }}>View Original</button>
+        <button>Mark as Task</button>
+      </div>
+
+      <hr />
       <div
         dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-        style={{ wordWrap: "break-word" }}
+        style={{ marginTop: "20px" }}
       />
     </div>
   );
@@ -107,18 +127,16 @@ const EmailDetails = ({ email }) => {
 
 EmailDetails.propTypes = {
   email: PropTypes.shape({
-    payload: PropTypes.shape({
-      headers: PropTypes.arrayOf(
-        PropTypes.shape({
-          name: PropTypes.string,
-          value: PropTypes.string
-        })
-      ),
-      parts: PropTypes.array,
-      body: PropTypes.object
-    })
-  })
+    payload: PropTypes.object,
+    summary: PropTypes.string,
+    actionItems: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.number,
+        text: PropTypes.string,
+        completed: PropTypes.bool,
+      })
+    ),
+  }),
 };
 
 export default EmailDetails;
-

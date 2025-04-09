@@ -21,10 +21,10 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
-    "scripts": {
+  "scripts": {
     "init": "node ./database-scripts/init.js",
     "start": "node ./database-scripts/start.js",
     "resetdb": "node ./database-scripts/reset.js",
