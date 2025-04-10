@@ -5,10 +5,8 @@ import Reader from "./Reader";
 import Sidebar from "./Sidebar";
 import { emailExists, userEmails, addEmail, getFolders, getID, getEmails } from "../api";
 
-// Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
-const CLIENT_ID =
-  "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
+const CLIENT_ID = "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
 const Home = ({
@@ -29,10 +27,10 @@ const Home = ({
 
   const getEmailBody = (payload) => {
     if (!payload) return "";
-  
+
     let bodyData = "";
     let images = {};
-  
+
     const findBody = (parts) => {
       for (let part of parts) {
         if (part.mimeType === "text/html" && part.body?.data) {
@@ -49,184 +47,129 @@ const Home = ({
         }
       }
     };
-  
+
     if (payload.parts) {
       findBody(payload.parts);
     } else if (payload.body?.data) {
       bodyData = payload.body.data;
     }
-  
+
     if (!bodyData) return "";
-  
+
     const binaryString = atob(bodyData.replace(/-/g, '+').replace(/_/g, '/'));
     const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
     let decodedBody = new TextDecoder("utf-8").decode(bytes);
-  
+
     Object.keys(images).forEach((attachmentId) => {
       const imageData = `data:${images[attachmentId].mimeType};base64,${images[attachmentId].data}`;
       decodedBody = decodedBody.replace(new RegExp(`cid:${attachmentId}`, "g"), imageData);
     });
-  
+
     return decodedBody;
   };
 
   const addEmailToDb = async (emailData) => {
-    let sender_email = emailData.payload.headers.find(
-      (header) => header.name === "From"
-    ).value; // Extract sender email from "From" header
-    if(sender_email.includes("<") && sender_email.includes(">")) {
-      sender_email = sender_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
-    console.log("Sender email:", sender_email); // Log sender email
-    
-    console.log("Sender email:", sender_email); // Log sender email
-    
-    let recipient_email = emailData.payload.headers.find(
-      (header) => header.name === "To"
-    ).value;
-    if(recipient_email.includes("<") && recipient_email.includes(">")) {
-      recipient_email = recipient_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
-    console.log("Recipient email:", recipient_email); // Log recipient email
-    
+    let sender_email = emailData.payload.headers.find(h => h.name === "From")?.value || "";
+    let recipient_email = emailData.payload.headers.find(h => h.name === "To")?.value || "";
+
+    const extractEmail = (str) => str.includes("<") ? str.split("<")[1].split(">")[0] : str;
+
+    sender_email = extractEmail(sender_email);
+    recipient_email = extractEmail(recipient_email);
+
+    const subject = emailData.payload.headers.find(h => h.name === "Subject")?.value || "";
     const google_message_id = emailData.id;
-    console.log("Google message ID:", google_message_id); // Log Google message ID
-    
-    const subject = emailData.payload.headers.find(
-      (header) => header.name === "Subject"
-    ).value; // Extract subject from "Subject" header
-    console.log("Subject:", subject); // Log subject
-    
     const body = getEmailBody(emailData.payload);
-    
+
     const emailDataToSend = {
-      sender_email: sender_email,
-      google_message_id: google_message_id,
-      recipient_email: recipient_email,
-      subject: subject,
-      body: body,
+      sender_email,
+      google_message_id,
+      recipient_email,
+      subject,
+      body,
       folder_id: null,
     };
-    
-    await addEmail(emailDataToSend); // Send email data to the server
-  }
 
-  // Function to merge Gmail data with existing folders
+    await addEmail(emailDataToSend);
+  };
+
   const mergeWithGmailData = useCallback((currentFolders, emails) => {
     return currentFolders.map((folder) => {
       if (folder.id === "inbox" || folder.name === "Inbox") {
-        const emailItems = emails.map((msg) => ({
-          type: "email",
-          id: msg.id,
-          data: msg,
-        }));
-
-        // Avoid duplicates
-        const existingIds = new Set(folder.items?.map((item) => item.id) || []);
-        const newEmails = emailItems.filter(
-          (item) => !existingIds.has(item.id)
-        );
-
+        const existingIds = new Set(folder.items?.map((item) => item.id));
+        const newEmails = emails
+          .map((msg) => ({ type: "email", id: msg.id, data: msg }))
+          .filter((item) => !existingIds.has(item.id));
         return { ...folder, items: [...(folder.items || []), ...newEmails] };
       }
       return folder;
     });
   }, []);
 
-  // Convert Gmail messages into a structured folder format
-  const transformMessagesToFolders = useCallback((messages) => {
-    return [
-      {
-        id: "inbox",
-        name: "Inbox",
-        items: messages.map((msg) => ({
-          type: "email",
-          id: msg.id,
-          data: msg,
-        })),
-      },
-    ];
-  }, []);
+  const transformMessagesToFolders = useCallback((messages) => [
+    {
+      id: "inbox",
+      name: "Inbox",
+      items: messages.map((msg) => ({ type: "email", id: msg.id, data: msg })),
+    },
+  ], []);
 
-  // Fetch Gmail messages
   const fetchMessages = useCallback(async () => {
     setLoading(true);
+    const allEmails = [];
+    const newMessageIDs = new Set();
+    let foundExisting = false;
+    let pageToken = null;
+
     try {
-      const response = await gapi.client.gmail.users.messages.list({
-        userId: "me",
-        maxResults: 10,
+      const response = await gapi.client.gmail.users.messages.list({ userId: "me", maxResults: 10 });
+      const messages = response.result.messages || [];
+
+      if (messages.length > 0) {
+        const messageResponses = await Promise.all(
+          messages.map((msg) => gapi.client.gmail.users.messages.get({ userId: "me", id: msg.id }))
+        );
+
+        const emails = messageResponses.map((res) => res.result);
+        const firstId = emails[0]?.id;
+        newMessageIDs.add(firstId);
+
+        const exists = await emailExists(firstId);
+        if (firstId && exists.exists) {
+          foundExisting = true;
+        } else {
+          await addEmailToDb(emails[0]);
+          allEmails.push(emails[0]);
+        }
+      }
+
+      const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+      const email = user.getEmail();
+      const dbEmails = await userEmails(email);
+
+      dbEmails.forEach((email) => {
+        const messageId = email.google_message_id;
+        if (!newMessageIDs.has(messageId)) {
+          allEmails.push({
+            id: messageId,
+            payload: {
+              headers: [
+                { name: "Subject", value: email.subject },
+                { name: "From", value: email.sender_email },
+                { name: "To", value: email.recipient_email },
+                { name: "Message-ID", value: messageId },
+              ],
+              body: { data: email.body },
+            },
+          });
+        }
       });
 
-      const messages = response.result.messages;
-      if (messages?.length > 0) {
-        const messagePromises = messages.map((msg) =>
-          gapi.client.gmail.users.messages.get({ userId: "me", id: msg.id })
-        );
-        const responses = await Promise.all(messagePromises);
-        const emails = responses.map((res) => res.result);
-        
-        const messageId = emails[0].id;
-        newMessageIDs.add(messageId);
+      const mergedFolders = folders.length === 0
+        ? transformMessagesToFolders(allEmails)
+        : mergeWithGmailData(folders, allEmails);
 
-        const emailExistsData = await emailExists(messageId);
-        console.log("Email exists check:", emailExistsData, messageId);
-          
-        if (messageId && emailExistsData.exists) {
-          foundExisting = true;
-          break;
-        }
-        console.log("email: ", emails[0]);
-        await addEmailToDb(emails[0]);
-        allEmails.push(emails[0]);
-        counter++;
-        
-
-        if (!foundExisting && response.result.nextPageToken) {
-          pageToken = response.result.nextPageToken;
-        } else {
-          break;
-        }
-      }
-
-      // Now get all emails from our database
-      try {
-        const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-        const email = user.getEmail();
-        const dbEmails = await userEmails(email);
-        
-        // Convert DB emails to same format as Gmail emails
-        const formattedDbEmails = dbEmails.map(email => ({
-          id: email.google_message_id, // or generate a unique ID
-          payload: {
-            headers: [
-              { name: "Subject", value: email.subject },
-              { name: "From", value: email.sender_email },
-              { name: "To", value: email.recipient_email },
-              { name: "Message-ID", value: email.google_message_id }
-            ],
-            body: {
-              data: email.body
-            }
-          }
-        }));
-
-        for (const email of formattedDbEmails) {
-          if (!newMessageIDs.has(email.payload.headers.find(h => h.name === "Message-ID").value)) {
-            allEmails.push(email);
-          }
-        }
-        console.log("Fetched emails from DB:", allEmails);
-      } catch (error) {
-        console.error("Error fetching emails from database:", error);
-      }
-
-      // Update folders with the combined emails
-      const mergedFolders =
-        folders.length === 0
-          ? transformMessagesToFolders(allEmails)
-          : mergeWithGmailData(folders, allEmails);
       updateFolders(mergedFolders);
-
     } catch (error) {
       console.error("Error fetching emails:", error);
     } finally {
@@ -234,38 +177,24 @@ const Home = ({
     }
   }, [transformMessagesToFolders, mergeWithGmailData]);
 
-  // Home.js - fix the useEffect hooks
   useEffect(() => {
     const initClient = () => {
       gapi.load("client:auth2", () => {
         gapi.client
-          .init({
-            apiKey: API_KEY,
-            clientId: CLIENT_ID,
-            discoveryDocs: [
-              "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest",
-            ],
-            scope: SCOPES,
-          })
+          .init({ apiKey: API_KEY, clientId: CLIENT_ID, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"], scope: SCOPES })
           .then(() => {
             setIsGapiInitialized(true);
-            const authInstance = gapi.auth2.getAuthInstance();
-            setIsAuthenticated(authInstance.isSignedIn.get());
-            authInstance.isSignedIn.listen(setIsAuthenticated);
-
-            if (authInstance.isSignedIn.get()) {
-              fetchMessages();
-            }
+            const auth = gapi.auth2.getAuthInstance();
+            setIsAuthenticated(auth.isSignedIn.get());
+            auth.isSignedIn.listen(setIsAuthenticated);
+            if (auth.isSignedIn.get()) fetchMessages();
           })
-          .catch((error) => {
-            console.error("Error initializing GAPI client:", error);
-            alert(
-              "Failed to initialize Google API client. Please try again later."
-            );
+          .catch((err) => {
+            console.error("Error initializing GAPI client:", err);
+            alert("Failed to initialize Google API client. Please try again later.");
           });
       });
     };
-
     initClient();
   }, [fetchMessages, setIsAuthenticated]);
 
@@ -276,11 +205,10 @@ const Home = ({
         const email = user.getEmail();
         const userID = await getID(email);
         const userFolders = await getFolders(userID);
-        let formattedUserFolders = [];
-        for (const folder of userFolders) {
-          const currentFolderEmails = await getEmails(folder.id);
 
-          const currentFolderItems = currentFolderEmails.map((email) => ({
+        const formattedUserFolders = await Promise.all(userFolders.map(async (folder) => {
+          const currentFolderEmails = await getEmails(folder.id);
+          const items = currentFolderEmails.map((email) => ({
             id: email.google_message_id,
             type: "email",
             data: {
@@ -290,98 +218,34 @@ const Home = ({
                   { name: "Subject", value: email.subject },
                   { name: "From", value: email.sender_email },
                   { name: "To", value: email.recipient_email },
-                  { name: "Message-ID", value: email.google_message_id }
+                  { name: "Message-ID", value: email.google_message_id },
                 ],
-                body: {
-                  data: email.body
-                }
-              }
-            }
-            }));
+                body: { data: email.body },
+              },
+            },
+          }));
+          return { ...folder, items, type: "folder", isDraggable: true };
+        }));
 
-          formattedUserFolders.push({
-            id: folder.id,
-            name: folder.name,
-            type: "folder",
-            items: currentFolderItems,
-            isDraggable: true
-          });
-        }
-        console.log("formatted user folders:", formattedUserFolders);
-        for(const folder of formattedUserFolders) {
-          folders.push(folder);
-        }
-        console.log("folders:", folders);
-      } catch (error) {
-        console.error("Failed to fetch folders:", error);
+        folders.push(...formattedUserFolders);
+      } catch (err) {
+        console.error("Failed to fetch folders:", err);
       }
     };
-  
-    // Only fetch folders if none are loaded yet
-    if (folders.length === 1 && folders[0].name === "Inbox" && gapi.auth2 && gapi.auth2.getAuthInstance().isSignedIn.get()) {
+
+    if (folders.length === 1 && folders[0].name === "Inbox" && gapi.auth2?.getAuthInstance().isSignedIn.get()) {
       fetchUserFolders();
     }
   }, [folders]);
 
-  // Handlers for folder management
-  const handleRenameFolder = (folderId, newName) => {
-    onRenameFolder(folderId, newName);
-  };
-
-  const handleDeleteFolder = (folderId) => {
-    onDeleteFolder(folderId);
-  };
-
-  const handleCreateFolder = (folderName) => {
-    onCreateFolder(folderName);
-  };
-
-  const handleMoveFolder = (
-    sourceParentId,
-    destParentId,
-    folderId,
-    sourceIndex,
-    destIndex
-  ) => {
-    onMoveFolder(
-      sourceParentId,
-      destParentId,
-      folderId,
-      sourceIndex,
-      destIndex
-    );
-  };
-
-  const handleReorderFolders = (
-    sourceParentId,
-    destParentId,
-    folderId,
-    sourceIndex,
-    destIndex
-  ) => {
-    onReorderFolders(
-      sourceParentId,
-      destParentId,
-      folderId,
-      sourceIndex,
-      destIndex
-    );
-  };
-
-  const handleMoveEmail = (emailId, sourceFolderId, destinationFolderId) => {
-    onMoveEmail(emailId, sourceFolderId, destinationFolderId);
-  };
-
   const handleSignoutClick = () => {
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (authInstance) {
-      authInstance.signOut().then(() => {
+    const auth = gapi.auth2.getAuthInstance();
+    if (auth) {
+      auth.signOut().then(() => {
         localStorage.removeItem("folders");
         setIsAuthenticated(false);
         navigate("/");
       });
-    } else {
-      console.error("Google API client is not initialized.");
     }
   };
 
@@ -397,20 +261,16 @@ const Home = ({
           folders={folders}
           onSelectEmail={setSelectedEmail}
           selectedEmail={selectedEmail}
-          onRenameFolder={handleRenameFolder}
-          onDeleteFolder={handleDeleteFolder}
-          onCreateFolder={handleCreateFolder}
-          onMoveFolder={handleMoveFolder}
-          onReorderFolders={handleReorderFolders}
-          onMoveEmail={handleMoveEmail}
+          onRenameFolder={onRenameFolder}
+          onDeleteFolder={onDeleteFolder}
+          onCreateFolder={onCreateFolder}
+          onMoveFolder={onMoveFolder}
+          onReorderFolders={onReorderFolders}
+          onMoveEmail={onMoveEmail}
         />
       )}
-
       <Reader email={selectedEmail} />
-      <button
-        onClick={handleSignoutClick}
-        style={{ position: "absolute", top: 10, right: 10 }}
-      >
+      <button onClick={handleSignoutClick} style={{ position: "absolute", top: 10, right: 10 }}>
         Sign out
       </button>
     </div>
