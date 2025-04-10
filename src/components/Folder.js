@@ -19,8 +19,6 @@ const Folder = ({
   const [isEditing, setIsEditing] = useState(false);
   const [newFolderName, setNewFolderName] = useState(folder.name);
   const isDraggable = folder.isDraggable ?? true;
-   
-  console.log(`Folder: ${folder.name}`, folder.items);
 
   const handleRename = () => {
     if (newFolderName && newFolderName.trim() !== "") {

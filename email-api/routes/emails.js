@@ -15,8 +15,8 @@ router.post("/", async (req, res) => {
     );
 
     res.json(result.rows[0]);
-    console.log("Email with id " + result.rows[0].id + " added to folder with id " + folder_id + ":");
-    console.log(result.rows[0]);
+    //console.log("Email with id " + result.rows[0].id + " added to folder with id " + folder_id + ":");
+    //console.log(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -33,7 +33,24 @@ router.get("/emailExists", async (req, res) => {
     );
 
     res.json({ exists: result.rows.length > 0 });
-    console.log(result.rows);
+    //console.log(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/getEmailId", async (req, res) => {
+  try {
+    const { google_message_id } = req.query;
+
+    const result = await pool.query(
+      "SELECT id FROM email_app.emails WHERE google_message_id = $1",
+      [google_message_id]
+    );
+
+    res.json({ id: result.rows[0]?.id || null });
+    //console.log(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -43,6 +60,7 @@ router.get("/emailExists", async (req, res) => {
 router.post("/folder/updateFolderId", async (req, res) => {
   try {
     const { email_id, folder_id } = req.body;
+    console.log("Update folder request:", req.body);
 
     const result = await pool.query(
       "UPDATE email_app.emails SET folder_id = $1 WHERE id = $2 RETURNING *",
@@ -211,9 +229,6 @@ router.get('/userEmails', async (req, res) => {
     );
 
     res.json(result.rows);
-    for (let i = 0; i < result.rows.length; i++) {
-      console.log('Email with subject "' + result.rows[i].subject + '" found');
-    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

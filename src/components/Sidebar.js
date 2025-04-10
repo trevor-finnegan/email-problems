@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import Folder from "./Folder";
-import { addFolder, getID, getFolderID, addEmail } from "../api";
+import { addFolder, getID, getFolderID, updateFolderID, getEmailId } from "../api";
 import { gapi } from "gapi-script";
 
 // Add these helper functions at the top of the file
@@ -77,60 +77,31 @@ const Sidebar = ({
 
     if (type === "email") {
       onMoveEmail(draggableId, source.droppableId, destination.droppableId);
-      /*
+      
       if(destinationFolder.name !== "Inbox"){
         
         const emailData = findEmailById(folders, draggableId);
-        console.log("Email Data", emailData);
+        console.log("draggableId:", draggableId); // Log draggableId
 
-        const sender_email = emailData.payload.headers.find(
-          (header) => header.name === "From"
-        ).value.split('<')[1].split('>')[0]; // Extract sender email from "From" header
-
-        console.log("Sender email:", sender_email); // Log sender email
-
-        const recipient_email = emailData.payload.headers.find(
-          (header) => header.name === "Delivered-To"
-        ).value; // Extract recipient email from "To" header
-        console.log("Recipient email:", recipient_email); // Log recipient email
-
-        const google_message_id = emailData.payload.headers.find(
-          (header) => header.name === "Message-id" || header.name === "Message-ID"
-        ).value.split('<')[1].split('>')[0]; // Extract Google message ID from "Message-ID" header
-        console.log("Google message ID:", google_message_id); // Log Google message ID
-
-        const subject = emailData.payload.headers.find(
-          (header) => header.name === "Subject"
-        ).value; // Extract subject from "Subject" header
-        console.log("Subject:", subject); // Log subject
-
-        const body = getEmailBody(emailData.payload);
+        const google_message_id = emailData.id;
 
         const folder_name = destinationFolder.name; // Get the name of the destination folder
-        console.log("Folder name:", folder_name); // Log folder name
 
         const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
         const email = user.getEmail();
         const userID = await getID(email);
         console.log("User ID:", userID); // Log user ID
 
+        const emailID = await getEmailId(google_message_id);
+
         const folderData = await getFolderID(userID, folder_name);
         const folderID = folderData.folder_id; // Get the ID of the destination folder
         console.log("Folder ID:", folderID); // Log folder ID
 
-        const emailDataToSend = {
-          sender_email: sender_email,
-          google_message_id: google_message_id,
-          recipient_email: recipient_email,
-          subject: subject,
-          body: body,
-          folder_id: folderID,
-        };
-
-        await addEmail(emailDataToSend); // Send email data to the server
+        await updateFolderID(folderID, emailID); // Update the email's folder ID in the database
 
       } 
-        */
+        
 
     }
   };

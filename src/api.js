@@ -78,8 +78,8 @@ export const getID = async (email) => {
 };
 
 export const updateFolderID = async (folderId, emailId) => {
-  const response = await fetch(`${API_URL}/emails/folder/updateFolderID`, {
-    method: "PUT",
+  const response = await fetch(`${API_URL}/emails/folder/updateFolderId`, {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ folder_id: folderId, email_id: emailId }),
   });
@@ -131,4 +131,21 @@ export const userEmails = async (email) => {
     console.error("Error checking user emails:", error);
     return []; // Assume user doesn't exist if there's an error
   }
-}
+};
+
+export const getEmailId = async (googleMessageId) => {
+  try {
+    const response = await fetch(`${API_URL}/emails/getEmailId?google_message_id=${(googleMessageId)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Data from getEmailId:", data); // Log the data for debugging
+    return data.id; // Correctly await and return exists value
+  } catch (error) {
+    console.error("Error checking user emails:", error);
+    return -1; // Assume user doesn't exist if there's an error
+  }
+};
