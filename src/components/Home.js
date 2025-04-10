@@ -353,8 +353,8 @@ const Home = ({
     onDeleteFolder(folderId);
   };
 
-  const handleCreateFolder = (folderName) => {
-    onCreateFolder(folderName);
+  const handleCreateFolder = (folderName, folderId) => {
+    onCreateFolder(folderName, folderId);
   };
 
   const handleMoveFolder = (

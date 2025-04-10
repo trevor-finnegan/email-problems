@@ -98,11 +98,10 @@ const Sidebar = ({
         const folderID = folderData.folder_id; // Get the ID of the destination folder
         console.log("Folder ID:", folderID); // Log folder ID
 
-        await updateFolderID(folderID, emailID); // Update the email's folder ID in the database
+        await updateFolderID(folderID, emailID);
 
+        window.location.reload();
       } 
-        
-
     }
   };
 
@@ -124,12 +123,14 @@ const Sidebar = ({
         <button
           onClick={async () => {
             if (newFolderName.trim() !== "") {
-              onCreateFolder(newFolderName); // Create under inbox by default
-              setNewFolderName("");
               const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
               const email = user.getEmail();
               const userID = await getID(email);
-              await addFolder(userID, newFolderName, "custom", null);
+              const newFolderData = await addFolder(userID, newFolderName, "custom", null);
+              const newFolderId = newFolderData.id; 
+              console.log("New folder ID:", newFolderId); // Log the new folder ID
+              onCreateFolder(newFolderName, newFolderId);
+              setNewFolderName("");
 
             } else {
               alert("Folder name cannot be empty!");

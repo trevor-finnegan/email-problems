@@ -149,3 +149,44 @@ export const getEmailId = async (googleMessageId) => {
     return -1; // Assume user doesn't exist if there's an error
   }
 };
+
+export const searchEmails = async (email, query, folderId) => {
+  try {
+    const response = await fetch(`${API_URL}/emails/search?email=${email}&folder_id=${folderId}&query=${query}`);
+    
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // Correctly await and return exists value
+  } catch (error) {
+    console.error("Error checking user emails:", error);
+    return []; // Assume user doesn't exist if there's an error
+  }
+};
+
+export const renameFolderDB = async (folderId, newName) => {
+  const response = await fetch(`${API_URL}/folders/rename?folderId=${folderId}&newName=${newName}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+  });
+  return response.json();
+};
+
+export const deleteFolderDB = async (folderId) => {
+  const response = await fetch(`${API_URL}/folders/${folderId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (response.status === 204) {
+    return { success: true }; // Return a success object
+  }
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to delete folder");
+  }
+  return data;
+};
