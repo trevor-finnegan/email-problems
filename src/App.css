@@ -13,6 +13,15 @@
   }
 }
 
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -26,15 +35,12 @@
 
 .App-link {
   color: #61dafb;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App-link:hover {
+  color: #21a1f1;
 }
 
 /* Center the login page and style the login box */
@@ -43,24 +49,25 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f4f4f4;
+  background-color: #f0f2f5;
   padding: 20px; /* Optional: To prevent content from touching edges */
 }
 
 .login-box {
-  width: 350px; /* Adjust to desired width */
+  width: 100%;
+  max-width: 400px;
   padding: 40px;
-  text-align: center;
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
 .login-box h2 {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
   font-size: 28px;
   font-weight: 600;
-  color: #333;
+  color: #2c3e50;
 }
 
 .error-message {
@@ -75,18 +82,23 @@
   justify-content: center;
 }
 
+/* Google login button */
 .google-login-container button {
   width: 100%;
   padding: 14px;
   font-size: 16px;
-  background-color: #4285F4; /* Google's blue */
+  font-weight: 500;
+  background-color: #4285F4;
   color: white;
-  border-radius: 4px;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  margin-top: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .google-login-container button:hover {
-  background-color: #357AE8;
+  background-color: #357ae8;
+  transform: translateY(-1px);
 }
+
+
