@@ -3,11 +3,24 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const fetch = require('node-fetch');
+const { JSDOM } = require('jsdom');
+
+//Extract readable text from HTML body of the email
+function extractReadableText(htmlBody) {
+  const dom = new JSDOM(htmlBody);
+  const document = dom.window.document;
+
+  document.querySelectorAll("script, style, noscript").forEach(el => el.remove());
+
+  return document.body.textContent.trim();
+}
 
 // Add a new email
 router.post("/", async (req, res) => {
   try {
     const { sender_email, google_message_id, recipient_email, subject, body, folder_id } = req.body;
+
+    const bodyText = extractReadableText(body);
 
     const query = `
     INSERT INTO email_app.emails (
@@ -18,7 +31,7 @@ router.post("/", async (req, res) => {
       google_message_id,
       folder_id,
       search_vector
-    ) VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $7 || ' ' || $8))
+    ) VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $7 || ' ' || $8 || ' ' || $9))
     RETURNING *
     `;
 
@@ -31,6 +44,7 @@ router.post("/", async (req, res) => {
       folder_id,         // $6
       sender_email,      // $7
       subject,           // $8
+      bodyText           // $9
     ]);
 
     res.json(result.rows[0]);
