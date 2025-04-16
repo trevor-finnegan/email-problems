@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import Email from "./Email";
+import { searchEmails } from "../api";
+import { gapi } from "gapi-script";
 
 const Folder = ({
   folder,
@@ -19,11 +21,63 @@ const Folder = ({
   const [isEditing, setIsEditing] = useState(false);
   const [newFolderName, setNewFolderName] = useState(folder.name);
   const isDraggable = folder.isDraggable ?? true;
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // State for tracking search input
+  const [visibleItems, setVisibleItems] = useState(folder.items); // State for filtered emails
+  const originalFolderItems = folder.items;// Store the original items in the folder
+  const [isSearching, setIsSearching] = useState(false); // State for tracking search status
 
-  const handleRename = () => {
+  useEffect(() => {
+    if (!isSearching) {
+      setVisibleItems(folder.items); // Reset to original items if not searching
+    } 
+  }, [isSearching, folder.items]);
+  
+
+  const handleRename = async () => {
     if (newFolderName && newFolderName.trim() !== "") {
       onRenameFolder(folder.id, newFolderName.trim());
       setIsEditing(false);
+    }
+  };
+
+  const handleSearchChange = async (event) => {
+    const query = event.target.value;
+    setSearchQuery(query); // Update the search query
+    console.log("Search query:", query); // Log the search query for debugging
+
+    if (query.trim() !== "") {
+      setIsSearching(true); 
+      const email = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile().getEmail(); // Get the user's email
+
+      const results = await searchEmails(email, query, folder.id);
+  
+      const filteredFolderItems = results.map((email) => ({
+        id: email.google_message_id,
+        type: "email",
+        data: {
+          id: email.google_message_id,
+          payload: {
+            headers: [
+              { name: "Subject", value: email.subject },
+              { name: "From", value: email.sender_email },
+              { name: "To", value: email.recipient_email },
+              { name: "Message-ID", value: email.google_message_id }
+            ],
+            body: {
+              data: email.body
+            }
+          }
+        }
+        }));
+
+      setVisibleItems(filteredFolderItems); 
+
+      console.log("Search results:", results); 
+      //setFilteredEmails(results); // Set the filtered emails
+    } else {
+      setVisibleItems(originalFolderItems); // Reset to original items if search query is empty
+      setIsSearching(false); 
     }
   };
 
@@ -84,13 +138,30 @@ const Folder = ({
                 </button>
               </>
             )}
+            {/* Search Button */}
+            <button onClick={() => setIsSearchVisible(!isSearchVisible)} style={{ marginLeft: "10px" }}>
+              Search
+            </button>
           </div>
+
+          {/* Search Bar */}
+          {isSearchVisible && (
+            <div style={{ marginTop: "10px" }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange} // Handle input changes
+                placeholder="Search emails..."
+                style={{ padding: "5px", width: "200px" }}
+              />
+            </div>
+          )}
 
           {isExpanded && (
             <Droppable droppableId={folder.id.toString()} type="email">
               {(provided) => (
                 <div ref={provided.innerRef} {...provided.droppableProps} className="drop-area">
-                  {folder.items?.map((item, index) =>
+                  {visibleItems?.map((item, index) =>
                     item.type === "folder" ? (
                       <Folder
                         key={item.id}

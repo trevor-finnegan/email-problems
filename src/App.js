@@ -10,7 +10,7 @@ import { gapi } from "gapi-script";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import "./App.css";
-import { isUser, addUser } from "./api";
+import { isUser, addUser, renameFolderDB, deleteFolderDB } from "./api";
 
 const CLIENT_ID =
   "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
@@ -67,36 +67,46 @@ const App = () => {
     initClient();
   }, []);
 
-  const handleRenameFolder = (folderId, newName) => {
+  const handleRenameFolder = async (folderId, newName) => {
     const renameFolder = (items) =>
-      items.map((item) =>
-        item.id.toString() === folderId
-          ? { ...item, name: newName }
-          : item.type === "folder"
-          ? { ...item, items: renameFolder(item.items) }
-          : item
-      );
+      items.map((item) => {
+        if (item.id.toString() === folderId.toString()) {
+          return { ...item, name: newName };
+        }
+        if (item.type === "folder" && item.items) {
+          return { ...item, items: renameFolder(item.items) };
+        }
+        return item;
+      });
+    
     setFolders(renameFolder(folders));
+    await renameFolderDB(folderId, newName); // Call the API to rename the folder
   };
 
-  const handleDeleteFolder = (folderId) => {
-    const deleteFolder = (items) =>
-      items.filter((item) =>
-        item.id.toString() === folderId
-          ? false
-          : item.type === "folder"
-          ? { ...item, items: deleteFolder(item.items) }
-          : true
-      );
+  const handleDeleteFolder = async (folderId) => {
+    const deleteFolder = (items) => {
+      // First filter out the folder to be deleted
+      const filtered = items.filter(item => item.id.toString() !== folderId.toString());
+      
+      // Then recursively process remaining folders
+      return filtered.map(item => {
+        if (item.type === "folder" && item.items) {
+          return { ...item, items: deleteFolder(item.items) };
+        }
+        return item;
+      });
+    };
+    
     setFolders(deleteFolder(folders));
+    await deleteFolderDB(folderId); // Call the API to delete the folder
   };
 
-  const handleCreateFolder = (folderName) => {
+  const handleCreateFolder = (folderName, folderId) => {
     // Remove parentFolderId parameter
     setFolders((prevFolders) => [
       ...prevFolders,
       {
-        id: Date.now().toString(),
+        id: folderId,
         name: folderName,
         type: "folder",
         items: [],

@@ -7,8 +7,6 @@ const bcrypt = require("bcrypt");
 router.post("/", async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("email: " + email);
-    console.log("password: " + password);
 
     if (!password) {
         return res.status(400).json({ error: "Password is required: " + req.body.email});
@@ -25,6 +23,7 @@ router.post("/", async (req, res) => {
     );
 
     res.status(201).json(result.rows[0]); // Return the new user data (without the password hash)
+    console.log("User created:", result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

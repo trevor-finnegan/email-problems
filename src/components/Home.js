@@ -238,6 +238,55 @@ const Home = ({
     }
   }, [folders]);
 
+  // Handlers for folder management
+  const handleRenameFolder = (folderId, newName) => {
+    onRenameFolder(folderId, newName);
+  };
+
+  const handleDeleteFolder = (folderId) => {
+    onDeleteFolder(folderId);
+  };
+
+  const handleCreateFolder = (folderName, folderId) => {
+    onCreateFolder(folderName, folderId);
+  };
+
+  const handleMoveFolder = (
+    sourceParentId,
+    destParentId,
+    folderId,
+    sourceIndex,
+    destIndex
+  ) => {
+    onMoveFolder(
+      sourceParentId,
+      destParentId,
+      folderId,
+      sourceIndex,
+      destIndex
+    );
+  };
+
+  const handleReorderFolders = (
+    sourceParentId,
+    destParentId,
+    folderId,
+    sourceIndex,
+    destIndex
+  ) => {
+    onReorderFolders(
+      sourceParentId,
+      destParentId,
+      folderId,
+      sourceIndex,
+      destIndex
+    );
+  };
+
+  const handleMoveEmail = (emailId, sourceFolderId, destinationFolderId) => {
+    onMoveEmail(emailId, sourceFolderId, destinationFolderId);
+  };
+
   const handleSignoutClick = () => {
     const auth = gapi.auth2.getAuthInstance();
     if (auth) {

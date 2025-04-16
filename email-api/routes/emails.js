@@ -3,25 +3,95 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const fetch = require('node-fetch');
+const { JSDOM } = require('jsdom');
+
+//Extract readable text from HTML body of the email
+function extractReadableText(htmlBody) {
+  const dom = new JSDOM(htmlBody);
+  const document = dom.window.document;
+
+  document.querySelectorAll("script, style, noscript").forEach(el => el.remove());
+
+  return document.body.textContent.trim();
+}
 
 // Add a new email
 router.post("/", async (req, res) => {
   try {
     const { sender_email, google_message_id, recipient_email, subject, body, folder_id } = req.body;
 
-    const result = await pool.query(
-      "INSERT INTO email_app.emails (sender_email, google_message_id, recipient_email, subject, body, folder_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [sender_email, google_message_id, recipient_email, subject, body, folder_id]
-    );
+    const bodyText = extractReadableText(body);
+
+    const query = `
+    INSERT INTO email_app.emails (
+      sender_email,
+      recipient_email,
+      subject,
+      body,
+      google_message_id,
+      folder_id,
+      search_vector
+    ) VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $7 || ' ' || $8 || ' ' || $9))
+    RETURNING *
+    `;
+
+    const result = await pool.query(query, [
+      sender_email,      // $1
+      recipient_email,   // $2
+      subject,           // $3
+      body,              // $4
+      google_message_id, // $5
+      folder_id,         // $6
+      sender_email,      // $7
+      subject,           // $8
+      bodyText           // $9
+    ]);
 
     res.json(result.rows[0]);
-    //console.log("Email with id " + result.rows[0].id + " added to folder with id " + folder_id + ":");
-    //console.log(result.rows[0]);
+    //console.log("Search Vector:", result.rows[0].search_vector);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
+// Search emails using a search vector
+router.get("/search", async (req, res) => {
+  try {
+    let { email, folder_id, query } = req.query;
+    console.log("email: ", email);
+
+    if (!query || query.trim() === '') {
+      return res.status(400).json({ error: "Missing search query" });
+    }
+
+    let result = null;
+
+    if (folder_id === "inbox") {
+      result = await pool.query(
+        `SELECT * FROM email_app.emails
+        WHERE search_vector @@ plainto_tsquery('english', $1)
+        AND recipient_email = $2`,
+        [query, email]
+      );
+    }
+    else {
+      result = await pool.query(
+        `SELECT * FROM email_app.emails
+        WHERE search_vector @@ plainto_tsquery('english', $1)
+        AND recipient_email = $2 AND folder_id = $3`,
+        [query, email, folder_id]
+      );
+   }
+
+    res.json(result.rows);
+    console.log("# search results:", result.rows.length); 
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Server error during search" });
+  }
+});
+
 
 router.get("/emailExists", async (req, res) => {
   try {
