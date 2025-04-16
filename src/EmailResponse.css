@@ -27,3 +27,13 @@
   background-color: #90caf9;
   color: #1a237e;
 }
+
+.email-new-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #2196F3;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+  animation: pulse 1.5s infinite;
+}
