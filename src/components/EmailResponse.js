@@ -10,6 +10,48 @@ const EmailResponse = ({ originalEmail, onClose }) => {
   const [to, setTo] = useState(fromHeader);
   const [subject, setSubject] = useState(`Re: ${subjectHeader}`);
   const [body, setBody] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false); // ✅ moved inside
+
+  const handleGenerateDraft = async () => {
+    setIsGenerating(true);
+  
+    try {
+      // 1. Extract Google Message ID
+      const messageIdHeader = originalEmail.payload?.headers.find(h => h.name === "Message-ID")?.value;
+  
+      if (!messageIdHeader) {
+        alert("Missing Message-ID in email headers.");
+        return;
+      }
+  
+      // 2. Call your backend to get the local DB ID
+      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const { id } = await res.json();
+  
+      if (!id) {
+        alert("Could not find email in database.");
+        return;
+      }
+  
+      // 3. Use that ID to hit the /respond route
+      const response = await fetch(`http://localhost:5001/emails/${id}/respond`, {
+        method: "POST",
+      });
+  
+      const result = await response.json();
+  
+      if (result.success) {
+        setBody(result.response);
+      } else {
+        alert("Failed to generate draft: " + result.error);
+      }
+    } catch (err) {
+      console.error("Generate draft error:", err);
+      alert("Error generating draft.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };  
 
   return (
     <div className="email-response">
@@ -33,7 +75,9 @@ const EmailResponse = ({ originalEmail, onClose }) => {
       />
 
       <div className="toolbar">
-        <button>Generate</button>
+        <button onClick={handleGenerateDraft} disabled={isGenerating}>
+          {isGenerating ? "🔄 Generating..." : "Generate"}
+        </button>
         <button><b>B</b></button>
         <button><i>I</i></button>
         <button><u>U</u></button>
@@ -61,3 +105,4 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 };
 
 export default EmailResponse;
+
