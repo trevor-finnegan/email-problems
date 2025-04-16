@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./EmailResponse.css";
+import "../EmailResponse.css";
 
 const EmailResponse = ({ originalEmail, onClose }) => {
   if (!originalEmail) return null;
