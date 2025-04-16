@@ -88,7 +88,6 @@ const EmailDetails = ({ email }) => {
       <hr />
       <div style={{ marginTop: "20px" }}>
         <button onClick={() => setShowReply(true)} style={{ marginRight: "10px" }}>Respond</button>
-        <button style={{ marginRight: "10px" }}>View Original</button>
         <button>Mark as Task</button>
       </div>
 
