@@ -1,4 +1,5 @@
 import React from "react";
+import "../App.css";
 
 const Email = ({ email, onSelectEmail, isSelected }) => {
   const subject =
@@ -11,55 +12,13 @@ const Email = ({ email, onSelectEmail, isSelected }) => {
   return (
     <div
       onClick={() => onSelectEmail(email)}
-      style={{
-        height: "80px", // Fixed height for emails
-        padding: "8px",
-        cursor: "pointer",
-        borderBottom: "1px solid #eee",
-        backgroundColor: isSelected ? "#f0f0f0" : "white",
-        overflow: "hidden", // Ensure content stays within height
-        boxSizing: "border-box", // Include padding in height calculation
-        display: "flex", // Ensure the layout aligns correctly
-        alignItems: "center",
-      }}
+      className={`email-item ${isSelected ? "email-selected" : ""}`}
     >
-      {/* Blue dot if new */}
-      {email.isNew && (
-        <span
-          style={{
-            width: "8px",
-            height: "8px",
-            backgroundColor: "blue",
-            borderRadius: "50%",
-            marginRight: "10px", // Space between dot and subject
-            flexShrink: 0,
-          }}
-        ></span>
-      )}
-
-      <div
-        style={{
-          fontWeight: "bold",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {subject}
-      </div>
-      <div
-        style={{
-          fontSize: "0.9em",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {from}
-      </div>
+      {email.isNew && <div className="email-new-dot" />}
+      <div className="email-subject">{subject}</div>
+      <div className="email-sender">{from}</div>
     </div>
   );
 };
 
 export default Email;
-
