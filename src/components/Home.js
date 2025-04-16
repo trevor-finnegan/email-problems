@@ -131,16 +131,22 @@ const Home = ({
         );
 
         const emails = messageResponses.map((res) => res.result);
-        const firstId = emails[0]?.id;
-        newMessageIDs.add(firstId);
-
-        const exists = await emailExists(firstId);
-        if (firstId && exists.exists) {
-          foundExisting = true;
-        } else {
-          await addEmailToDb(emails[0]);
-          allEmails.push(emails[0]);
+        for (let i = 0; i < emails.length; i++) {
+          const email = emails[i];
+          const id = email.id;
+          newMessageIDs.add(id);
+        
+          const exists = await emailExists(id);
+          if (exists.exists) {
+            foundExisting = true;
+            break; // Stop fetching once we hit an existing one
+          } else {
+            await addEmailToDb(email);
+            const newEmail = { ...email, isNew: true };
+            allEmails.push(newEmail);
+          }
         }
+        
       }
 
       const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
