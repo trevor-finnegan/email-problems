@@ -187,7 +187,6 @@ const Folder = ({
                               onSelectEmail={(email) => {
                                 const enhancedEmail = {
                                   ...email,
-                                  isNew: false, // clear the "new" status once opened
                                   summary: "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions.",
                                   actionItems: [
                                     { id: 1, text: "Review Attached Document", completed: false },

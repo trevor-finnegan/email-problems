@@ -40,9 +40,7 @@ const getEmailBody = (payload) => {
 
   try {
     const binaryString = atob(bodyData.replace(/-/g, "+").replace(/_/g, "/"));
-    const bytes = new Uint8Array(
-      [...binaryString].map((char) => char.charCodeAt(0))
-    );
+    const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
     return new TextDecoder("utf-8").decode(bytes);
   } catch (e) {
     return bodyData;
@@ -54,24 +52,18 @@ const EmailDetails = ({ email }) => {
 
   const safeEmail = email || {};
   const subject =
-    safeEmail.payload?.headers?.find((h) => h.name === "Subject")?.value ||
-    "No Subject";
+    safeEmail.payload?.headers?.find((h) => h.name === "Subject")?.value || "No Subject";
   const from =
-    safeEmail.payload?.headers?.find((h) => h.name === "From")?.value ||
-    "Unknown Sender";
+    safeEmail.payload?.headers?.find((h) => h.name === "From")?.value || "Unknown Sender";
   const to =
-    safeEmail.payload?.headers?.find((h) => h.name === "To")?.value ||
-    "Unknown Recipient";
+    safeEmail.payload?.headers?.find((h) => h.name === "To")?.value || "Unknown Recipient";
   const date =
-    safeEmail.payload?.headers?.find((h) => h.name === "Date")?.value ||
-    "Unknown Date";
+    safeEmail.payload?.headers?.find((h) => h.name === "Date")?.value || "Unknown Date";
 
   const rawBody = getEmailBody(safeEmail.payload);
   const sanitizedBody = DOMPurify.sanitize(rawBody);
 
-  const summary =
-    safeEmail.summary ||
-    "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions...";
+  const summary = safeEmail.summary || "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions...";
   const actionItems = safeEmail.actionItems || [
     { id: 1, text: "Review Attached Document", completed: false },
     { id: 2, text: "Update Project Status", completed: true },
@@ -89,24 +81,13 @@ const EmailDetails = ({ email }) => {
   return (
     <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
       <h3>{subject}</h3>
-      <p>
-        <strong>From:</strong> {from}
-      </p>
-      <p>
-        <strong>To:</strong> {to}
-      </p>
-      <p>
-        <strong>Date:</strong> {date}
-      </p>
+      <p><strong>From:</strong> {from}</p>
+      <p><strong>To:</strong> {to}</p>
+      <p><strong>Date:</strong> {date}</p>
 
       <hr />
       <div style={{ marginTop: "20px" }}>
-        <button
-          onClick={() => setShowReply(true)}
-          style={{ marginRight: "10px" }}
-        >
-          Respond
-        </button>
+        <button onClick={() => setShowReply(true)} style={{ marginRight: "10px" }}>Respond</button>
         <button>Mark as Task</button>
       </div>
 
@@ -128,22 +109,14 @@ const EmailDetails = ({ email }) => {
 
           <div style={{ margin: "10px 0" }}>
             <strong>Progress:</strong> {progress}%
-            <div
-              style={{
-                background: "#ddd",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "20px",
-                marginTop: "4px",
-              }}
-            >
-              <div
-                style={{
-                  width: `${progress}%`,
-                  height: "100%",
-                  background: "#4caf50",
-                }}
-              />
+            <div style={{
+              background: "#ddd", borderRadius: "8px", overflow: "hidden", height: "20px", marginTop: "4px"
+            }}>
+              <div style={{
+                width: `${progress}%`,
+                height: "100%",
+                background: "#4caf50"
+              }} />
             </div>
           </div>
         </>
@@ -157,16 +130,10 @@ const EmailDetails = ({ email }) => {
       )}
 
       <hr />
-      <div className="email-content-container">
-        <div
-          dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-          style={{
-            wordWrap: "break-word",
-            fontSize: "16px",
-            lineHeight: "1.5",
-          }}
-        />
-      </div>
+      <div
+        dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+        style={{ marginTop: "20px" }}
+      />
     </div>
   );
 };
@@ -186,3 +153,4 @@ EmailDetails.propTypes = {
 };
 
 export default EmailDetails;
+

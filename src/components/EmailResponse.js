@@ -100,9 +100,7 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 
 
       <div className="toolbar">
-        <button onClick={handleGenerateDraft} disabled={isGenerating}>
-          {isGenerating ? "🔄 Generating..." : "Generate"}
-        </button>
+        <button>Generate</button>
         <button><b>B</b></button>
         <button><i>I</i></button>
         <button><u>U</u></button>

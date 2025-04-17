@@ -1,77 +1,124 @@
-.sidebar {
-  width: 250px;
-  background-color: #99b6ca; /* Light blue background */
-  border-right: 1px solid #b3e0ff; /* Soft blue border */
-  color: #1a237e; /* Dark blue text */
-  height: 100vh;
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
 }
 
-.email-item {
-  background-color: #d2e7fa; /* Alice blue */
-  color: #34495e;
-  padding: 12px;
-  margin: 4px 0;
-  border-radius: 6px;
-  border: 1px solid #b9deff;
-  transition: all 0.2s ease;
+.App-link {
+  color: #61dafb;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.email-item:hover {
-  background-color: #aad3ff;
-  transform: translateX(3px);
-  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
+.App-link:hover {
+  color: #21a1f1;
 }
 
-.email-selected {
-  background-color: #cfe8fc !important;
-  border-left: 4px solid #2196f3; /* Bright blue accent */
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  padding: 30px;
+}
+
+
+/* Center the login page and style the login box */
+.login-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5;
+  padding: 20px; /* Optional: To prevent content from touching edges */
 }
 
 .login-box {
-  background-color: #f8fbfd;
-  border: 1px solid #90caf9;
-  box-shadow: 0 4px 12px rgba(144, 202, 249, 0.15);
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
+.login-box h2 {
+  margin-bottom: 24px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.google-login-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Google login button */
 .google-login-container button {
-  background-color: #2196f3; /* Bright blue */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .google-login-container button:hover {
-  background-color: #1976d2;
+  background-color: #357ae8;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
 }
 
-/* Reader.js content styling */
-.email-content-container {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 24px;
-  margin-top: 20px;
-  border: 1px solid #e0f2fe;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.05);
-}
 
-.email-content-container h1,
-.email-content-container h2,
-.email-content-container h3 {
-  color: #1a237e; /* Dark blue headers */
-  border-bottom: 2px solid #90caf9;
-  padding-bottom: 8px;
-}
-
-.email-content-container a {
-  color: #1976d2;
-  text-decoration: none;
-  border-bottom: 1px solid #90caf9;
-}
-
-/* Progress bar styling */
-div[style*="background: #4caf50"] {
-  background: #2196f3 !important;
-  border-radius: 8px;
-}
