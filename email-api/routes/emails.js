@@ -12,8 +12,12 @@ function extractReadableText(htmlBody) {
 
   document.querySelectorAll("script, style, noscript").forEach(el => el.remove());
 
-  return document.body.textContent.trim();
+  const rawText = document.body.textContent || '';
+  const cleanedText = rawText.replace(/\s+/g, ' ').trim(); // Normalize whitespace
+
+  return cleanedText;
 }
+
 
 // Add a new email
 router.post("/", async (req, res) => {
@@ -48,7 +52,6 @@ router.post("/", async (req, res) => {
     ]);
 
     res.json(result.rows[0]);
-    //console.log("Search Vector:", result.rows[0].search_vector);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });

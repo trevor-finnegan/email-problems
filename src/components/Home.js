@@ -75,7 +75,6 @@ const Home = ({
     const findHeader = (name) =>
       headers.find((h) => h.name === name)?.value || "";
     let sender_email = findHeader("From");
-    const recipient_email = findHeader("To");
     const subject = findHeader("Subject");
 
     if (sender_email.includes("<") && sender_email.includes(">")) {
@@ -83,11 +82,10 @@ const Home = ({
     }
 
     console.log("Sender email:", sender_email); // Log sender email
-    console.log("Recipient email:", recipient_email); // Log recipient email
     console.log("Subject:", subject); // Log subject
 
     const authInstance = gapi.auth2.getAuthInstance();
-    const user = authInstance.currentUser.get().getBasicProfile();
+    const userEmail = authInstance.currentUser.get().getBasicProfile().getEmail();
     const google_message_id = emailData.id;
     console.log("Google message ID:", google_message_id); // Log Google message ID
     
@@ -96,7 +94,7 @@ const Home = ({
     const emailDataToSend = {
       sender_email: sender_email,
       google_message_id: google_message_id,
-      recipient_email: recipient_email,
+      recipient_email: userEmail,
       subject: subject,
       body: body,
       folder_id: null,
@@ -151,7 +149,7 @@ const Home = ({
       let foundExisting = false;
       const batchSize = 1; // Number of emails to fetch per batch
       let newMessageIDs = new Set();
-      const emailLimit = 200;
+      const emailLimit = 20;
       let counter = 0;
 
       // First, fetch emails from Gmail until we find one that exists in our DB
