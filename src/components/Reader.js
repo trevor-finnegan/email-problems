@@ -45,7 +45,7 @@ const getEmailBody = (payload) => {
 
 const EmailDetails = ({ email }) => {
   const [showReply, setShowReply] = useState(false);
-  const [summary, setSummary] = useState("Loading summary...");
+  const [summary, setSummary] = useState("No summary generated.");
   const [actionItems, setActionItems] = useState([]);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [isLoadingActions, setIsLoadingActions] = useState(false);
@@ -65,57 +65,62 @@ const EmailDetails = ({ email }) => {
   }, [actionItems]);
 
   useEffect(() => {
-    if (!email) return;
-
-    setSummary("Loading summary...");
+    setSummary("No summary generated.");
     setActionItems([]);
-    setIsLoadingSummary(true);
-    setIsLoadingActions(true);
-
-    const fetchData = async () => {
-      try {
-        const messageIdHeader = email?.payload?.headers?.find(h => h.name === "Message-ID")?.value;
-        if (!messageIdHeader) return;
-
-        const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
-        const { id } = await res.json();
-        if (!id) return;
-
-        // Fetch summary
-        const summaryRes = await fetch(`http://localhost:5001/emails/${id}/summarize`, { method: "POST" });
-        const summaryJson = await summaryRes.json();
-
-        setSummary(summaryJson.success ? summaryJson.summary : "Failed to generate summary.");
-        setIsLoadingSummary(false);
-
-        // Fetch action items
-        const actionRes = await fetch(`http://localhost:5001/emails/${id}/action-items`, { method: "POST" });
-        const actionJson = await actionRes.json();
-
-        if (actionJson.success) {
-          let cleaned = actionJson.actionItems.map((item, index) => ({
-            id: index + 1,
-            text: item.text.replace(/^[-•\d.]*\s*/, "").trim(),
-            completed: false
-          }));
-
-          // Keep only top 3 or 4 if absolutely needed
-          setActionItems(cleaned.slice(0, 4));
-        } else {
-          setActionItems([]);
-        }
-
-      } catch (err) {
-        console.error("Error fetching summary/action items:", err);
-        setSummary("Unable to generate summary.");
-        setActionItems([]);
-      } finally {
-        setIsLoadingActions(false);
-      }
-    };
-
-    fetchData();
   }, [email]);
+
+  const fetchSummary = async () => {
+    setIsLoadingSummary(true);
+    try {
+      const messageIdHeader = email?.payload?.headers?.find(h => h.name === "Message-ID")?.value;
+      if (!messageIdHeader) return;
+
+      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const { id } = await res.json();
+      if (!id) return;
+
+      const summaryRes = await fetch(`http://localhost:5001/emails/${id}/summarize`, { method: "POST" });
+      const summaryJson = await summaryRes.json();
+
+      setSummary(summaryJson.success ? summaryJson.summary : "Failed to generate summary.");
+    } catch (err) {
+      console.error("Summary fetch error:", err);
+      setSummary("Error fetching summary.");
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
+  const fetchActionItems = async () => {
+    setIsLoadingActions(true);
+    try {
+      const messageIdHeader = email?.payload?.headers?.find(h => h.name === "Message-ID")?.value;
+      if (!messageIdHeader) return;
+
+      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const { id } = await res.json();
+      if (!id) return;
+
+      const actionRes = await fetch(`http://localhost:5001/emails/${id}/action-items`, { method: "POST" });
+      const actionJson = await actionRes.json();
+
+      if (actionJson.success) {
+        let cleaned = actionJson.actionItems.map((item, index) => ({
+          id: index + 1,
+          text: item.text.replace(/^[-•\d.]*\s*/, "").trim(),
+          completed: false
+        }));
+        setActionItems(cleaned.slice(0, 4)); // Limit to 4
+      } else {
+        setActionItems([]);
+      }
+    } catch (err) {
+      console.error("Action items fetch error:", err);
+      setActionItems([]);
+    } finally {
+      setIsLoadingActions(false);
+    }
+  };
 
   const handleToggle = (id) => {
     setActionItems(prev =>
@@ -144,29 +149,42 @@ const EmailDetails = ({ email }) => {
 
       {!showReply && (
         <>
-          <h4>Summary:</h4>
-          <p>{isLoadingSummary ? "Loading..." : summary}</p>
+        <h4>Summary:</h4>
+        <p>{isLoadingSummary ? "Loading..." : summary}</p>
+        <button
+          onClick={fetchSummary}
+          style={{ marginBottom: "10px" }}
+          disabled={isLoadingSummary || summary !== "No summary generated."}
+        >
+          Generate Summary
+        </button>
 
-          <h4>Action Items:</h4>
-          {isLoadingActions ? (
-            <p>Loading action items...</p>
-          ) : (
-            <ul style={{ listStyle: "none", padding: 0 }}>
+        <h4>Action Items:</h4>
+        {isLoadingActions ? (
+          <p>Loading action items...</p>
+        ) : (
+          <>
+            <ul>
               {actionItems.map((item) => (
-                <li key={item.id} style={{ marginBottom: "6px" }}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={item.completed}
-                      onChange={() => handleToggle(item.id)}
-                      style={{ marginRight: "8px" }}
-                    />
-                    {item.text}
-                  </label>
+                <li key={item.id}>
+                  <input
+                    type="checkbox"
+                    checked={item.completed}
+                    onChange={() => handleToggle(item.id)}
+                  />{" "}
+                  {item.text}
                 </li>
               ))}
             </ul>
-          )}
+          </>
+        )}
+        <button
+          onClick={fetchActionItems}
+          disabled={isLoadingActions || actionItems.length > 0}
+        >
+          Generate Action Items
+        </button>
+
 
           <div style={{ margin: "10px 0" }}>
             <strong>Progress:</strong> {progress}%
