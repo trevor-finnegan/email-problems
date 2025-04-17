@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../EmailResponse.css";
 
 const EmailResponse = ({ originalEmail, onClose }) => {
@@ -10,36 +10,42 @@ const EmailResponse = ({ originalEmail, onClose }) => {
   const [to, setTo] = useState(fromHeader);
   const [subject, setSubject] = useState(`Re: ${subjectHeader}`);
   const [body, setBody] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false); // ✅ moved inside
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const bodyRef = useRef(null);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.style.height = "auto";
+      bodyRef.current.style.height = bodyRef.current.scrollHeight + "px";
+    }
+  }, [body]);
 
   const handleGenerateDraft = async () => {
     setIsGenerating(true);
-  
+
     try {
-      // 1. Extract Google Message ID
       const messageIdHeader = originalEmail.payload?.headers.find(h => h.name === "Message-ID")?.value;
-  
+
       if (!messageIdHeader) {
         alert("Missing Message-ID in email headers.");
         return;
       }
-  
-      // 2. Call your backend to get the local DB ID
+
       const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
       const { id } = await res.json();
-  
+
       if (!id) {
         alert("Could not find email in database.");
         return;
       }
-  
-      // 3. Use that ID to hit the /respond route
+
       const response = await fetch(`http://localhost:5001/emails/${id}/respond`, {
         method: "POST",
       });
-  
+
       const result = await response.json();
-  
+
       if (result.success) {
         setBody(result.response);
       } else {
@@ -51,7 +57,7 @@ const EmailResponse = ({ originalEmail, onClose }) => {
     } finally {
       setIsGenerating(false);
     }
-  };  
+  };
 
   return (
     <div className="email-response">
@@ -59,20 +65,39 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 
       <div className="field">
         <label>To:</label>
-        <input type="text" value={to} onChange={(e) => setTo(e.target.value)} />
+        <input
+          type="text"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          style={{ width: `${Math.max(to.length, 10)}ch` }}
+        />
       </div>
 
       <div className="field">
         <label>Subject:</label>
-        <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} />
+        <input
+          type="text"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          style={{ width: `${Math.max(subject.length, 10)}ch` }}
+        />
       </div>
 
       <textarea
+        ref={bodyRef}
         className="email-body"
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => {
+          setBody(e.target.value);
+          if (bodyRef.current) {
+            bodyRef.current.style.height = "auto"; // Reset height first
+            bodyRef.current.style.height = bodyRef.current.scrollHeight + "px"; // Set to full content height
+        }
+        }}
         placeholder="Compose your message..."
+        rows={1}
       />
+
 
       <div className="toolbar">
         <button onClick={handleGenerateDraft} disabled={isGenerating}>
@@ -105,4 +130,5 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 };
 
 export default EmailResponse;
+
 
