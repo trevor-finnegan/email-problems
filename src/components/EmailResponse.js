@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "../EmailResponse.css";
 
 const EmailResponse = ({ originalEmail, onClose }) => {
-  if (!originalEmail) return null;
-
   const fromHeader = originalEmail?.payload?.headers.find(h => h.name === "From")?.value || "";
   const subjectHeader = originalEmail?.payload?.headers.find(h => h.name === "Subject")?.value || "";
 
@@ -62,6 +60,8 @@ const EmailResponse = ({ originalEmail, onClose }) => {
       setIsGenerating(false);
     }
   };
+
+  if (!originalEmail) return null;
 
   return (
     <div className="email-response">

@@ -7,16 +7,10 @@
 }
 
 .email-body {
-  width: 97%;
-  font-size: 1rem;
-  padding: 10px;
-  border-radius: 4px;
-  resize: none;
-  overflow: hidden;
-  line-height: 1.4;
-  transition: height 0.2s ease;
+  border: 1px solid #c3e4fe;
+  border-radius: 6px;
+  background-color: #ffffff;
 }
-
 
 .toolbar button {
   background-color: #e3f2fd;

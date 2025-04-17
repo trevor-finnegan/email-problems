@@ -185,7 +185,8 @@ const Home = ({
           break;
         }
         await addEmailToDb(emails[0]);
-        allEmails.push(emails[0]);
+        const newEmail = {...emails[0], isNew: true};
+        allEmails.push(newEmail);
         counter++;
         
 
