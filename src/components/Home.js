@@ -149,7 +149,7 @@ const Home = ({
       let foundExisting = false;
       const batchSize = 1; // Number of emails to fetch per batch
       let newMessageIDs = new Set();
-      const emailLimit = 20;
+      const emailLimit = 200;
       let counter = 0;
 
       // First, fetch emails from Gmail until we find one that exists in our DB
