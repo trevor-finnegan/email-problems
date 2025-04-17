@@ -195,6 +195,7 @@ const Home = ({
         } else {
           break;
         }
+        
       }
 
       // Now get all emails from our database
