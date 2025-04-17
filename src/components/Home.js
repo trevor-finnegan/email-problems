@@ -71,26 +71,25 @@ const Home = ({
   };
 
   const addEmailToDb = async (emailData) => {
-    let sender_email = emailData.payload.headers.find(
-      (header) => header.name === "From"
-    ).value; // Extract sender email from "From" header
-    if(sender_email.includes("<") && sender_email.includes(">")) {
-      sender_email = sender_email.split('<')[1].split('>')[0]; // Extract recipient email from "To" header
-    } 
+    const headers = emailData?.payload?.headers || [];
+    const findHeader = (name) =>
+      headers.find((h) => h.name === name)?.value || "";
+    let sender_email = findHeader("From");
+    const recipient_email = findHeader("To");
+    const subject = findHeader("Subject");
+
+    if (sender_email.includes("<") && sender_email.includes(">")) {
+      sender_email = sender_email.split('<')[1].split('>')[0];  
+    }
+
     console.log("Sender email:", sender_email); // Log sender email
+    console.log("Recipient email:", recipient_email); // Log recipient email
+    console.log("Subject:", subject); // Log subject
 
     const authInstance = gapi.auth2.getAuthInstance();
     const user = authInstance.currentUser.get().getBasicProfile();
-    const recipient_email = user.getEmail();
-    console.log("Recipient email:", recipient_email); // Log recipient email
-    
     const google_message_id = emailData.id;
     console.log("Google message ID:", google_message_id); // Log Google message ID
-    
-    const subject = emailData.payload.headers.find(
-      (header) => header.name === "Subject"
-    ).value; // Extract subject from "Subject" header
-    console.log("Subject:", subject); // Log subject
     
     const body = getEmailBody(emailData.payload);
     

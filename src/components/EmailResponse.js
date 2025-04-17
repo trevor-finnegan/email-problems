@@ -16,6 +16,10 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 
   useEffect(() => {
     if (bodyRef.current) {
+      bodyRef.current.focus();
+    }
+
+    if (bodyRef.current) {
       bodyRef.current.style.height = "auto";
       bodyRef.current.style.height = bodyRef.current.scrollHeight + "px";
     }
@@ -99,8 +103,11 @@ const EmailResponse = ({ originalEmail, onClose }) => {
       />
 
 
-      <div className="toolbar">
-        <button>Generate</button>
+        <div className="toolbar">
+        <button onClick={handleGenerateDraft} disabled={isGenerating}>
+          {isGenerating ? "🔄 Generating..." : "Generate"}
+        </button>
+
         <button><b>B</b></button>
         <button><i>I</i></button>
         <button><u>U</u></button>

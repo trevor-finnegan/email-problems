@@ -1,0 +1,45 @@
+.email-response {
+  background-color: #c0e5fe;
+  border: 1px solid #c3e4fe;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.email-body {
+  width: 97%;
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 4px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  transition: height 0.2s ease;
+}
+
+
+.toolbar button {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #81c5fc;
+}
+
+.action-buttons button {
+  background-color: #2196f3;
+  color: white;
+}
+
+.action-buttons button:last-child {
+  background-color: #90caf9;
+  color: #1a237e;
+}
+
+.email-new-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #2196F3;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+  animation: pulse 1.5s infinite;
+}

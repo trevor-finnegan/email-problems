@@ -162,15 +162,10 @@ router.get("/folder/:folderId", async (req, res) => {
   }
 });
 
-module.exports = router;
-
-
-
 router.post('/:id/summarize', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Get email content
+
     const emailRes = await pool.query(
       'SELECT body FROM email_app.emails WHERE id = $1',
       [id]
@@ -181,11 +176,9 @@ router.post('/:id/summarize', async (req, res) => {
     }
 
     const { body } = emailRes.rows[0];
-    
-    console.log('Using API Key:', process.env.OPENROUTER_API_KEY ? 'Exists' : 'Missing');
 
-    const prompt = "Summarize this email descriptively. Make sure all points in the email are represented, so the user does not miss information. Here is the email:"
-    // Call OpenRouter API
+    const prompt = "Summarize this email in 1–2 sentences. Focus only on the main message, skip greetings, closings, and unnecessary details. Be clear and concise. Here's the email:";
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -195,24 +188,18 @@ router.post('/:id/summarize', async (req, res) => {
         "X-Title": "Email Client"
       },
       body: JSON.stringify({
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        "messages": [
-          {
-            "role": "user",
-            "content": `${prompt}\n\n${body}`
-          }
-        ]
+        model: "deepseek/deepseek-chat-v3-0324:free",
+        messages: [{ role: "user", content: `${prompt}\n\n${body}` }]
       })
     });
 
     const result = await response.json();
-    
-    if (!response.ok) {
-      console.error('OpenRouter Response:', result);
-      throw new Error(`OpenRouter error: ${result.error?.message}`);
+    console.log("Summarization raw result:", JSON.stringify(result, null, 2));
+
+    if (!response.ok || !result.choices?.[0]?.message?.content) {
+      throw new Error(result.error?.message || "No summary returned.");
     }
 
-    // Return summary without storing it
     res.json({
       success: true,
       summary: result.choices[0].message.content
@@ -220,74 +207,10 @@ router.post('/:id/summarize', async (req, res) => {
 
   } catch (err) {
     console.error('Summarization error:', err);
-    res.status(500).json({ 
-      success: false,
-      error: 'Summarization failed'
-    });
+    res.status(500).json({ success: false, error: 'Summarization failed', details: err.message });
   }
 });
 
-
-router.post('/:id/respond', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // Get email content
-    const emailRes = await pool.query(
-      'SELECT body FROM email_app.emails WHERE id = $1',
-      [id]
-    );
-
-    if (emailRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Email not found' });
-    }
-
-    const { body } = emailRes.rows[0];
-    
-    const responsePrompt = `Generate an appropriate response to this email. Follow these guidelines: Address any questions asked in the email. Keep the response professional and concise. Maintain the original email's context. Use proper email formatting. Here is the email: ${body}`;
-
-    // Call OpenRouter API
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5001",
-        "X-Title": "Email Client"
-      },
-      body: JSON.stringify({
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        "messages": [
-          {
-            "role": "user",
-            "content": responsePrompt
-          }
-        ]
-      })
-    });
-
-    const result = await response.json();
-    
-    if (!response.ok) {
-      console.error('OpenRouter Response:', result);
-      throw new Error(`OpenRouter error: ${result.error?.message}`);
-    }
-
-    // Return response draft
-    res.json({
-      success: true,
-      response: result.choices[0].message.content
-    });
-
-  } catch (err) {
-    console.error('Response generation error:', err);
-    res.status(500).json({ 
-      success: false,
-      error: 'Response generation failed',
-      details: err.message
-    });
-  }
-});
 
 router.get('/userEmails', async (req, res) => {
   try {
@@ -304,3 +227,67 @@ router.get('/userEmails', async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+router.post('/:id/action-items', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const emailRes = await pool.query(
+      'SELECT body FROM email_app.emails WHERE id = $1',
+      [id]
+    );
+
+    if (emailRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    const { body } = emailRes.rows[0];
+
+    const prompt = `Extract up to 3 of the most important actionable tasks based on the email below. Each item should begin with a verb (e.g., "Read", "Register", "Review") and omit any introductory phrases like "Here are...". Return each task as a bullet point.\n\nEmail:\n${body}`;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:5001",
+        "X-Title": "Email Client"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat-v3-0324:free",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const result = await response.json();
+    console.log("Action Items raw result:", JSON.stringify(result, null, 2));
+
+    if (!response.ok || !result.choices?.[0]?.message?.content) {
+      throw new Error(result.error?.message || "No action items returned.");
+    }
+
+    const rawText = result.choices[0].message.content;
+
+    const items = rawText
+      .split('\n')
+      .filter(line => line.trim())
+      .slice(0, 4)
+      .map((line, index) => ({
+        id: index + 1,
+        text: line.replace(/^[-•\d.]+/, '').trim(),
+        completed: false
+      }));
+
+    res.json({ success: true, actionItems: items });
+
+  } catch (err) {
+    console.error('Action item generation error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Action item generation failed',
+      details: err.message
+    });
+  }
+});
+
+module.exports = router;
