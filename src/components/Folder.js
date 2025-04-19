@@ -92,21 +92,11 @@ const Folder = ({
             ...provided.draggableProps.style,
           }}
         >
-          <div
-            style={{
-              cursor: "pointer",
-              padding: "5px 0",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              boxSizing: "border-box",
-            }}
-          >
+          <div>
             {isDraggable && (
               <span 
                 {...provided.dragHandleProps} 
                 className="drag-handle"
-                style ={{ fontsize: "12px", marginRight: "1px", opacity: 1.0}}
               >
                 🟰
               </span>

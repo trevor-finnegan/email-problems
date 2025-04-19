@@ -9,6 +9,7 @@ import {
   getEmailId,
 } from "../api";
 import { gapi } from "gapi-script";
+import "../new.css";
 
 // Add these helper functions at the top of the file
 const decodeBase64 = (data) => {
@@ -117,18 +118,12 @@ const Sidebar = ({
 
   return (
     <div
-      style={{
-        width: "30%",
-        borderRight: "1px solid #ccc",
-        padding: "10px",
-        height: "100vh",
-        overflowY: "auto",
-      }}
+      className="sidebar"
     >
       <h2>Folders</h2>
 
       {/* Folder creation */}
-      <div style={{ marginBottom: "10px" }}>
+      <div className="folder-creation">
         <input
           type="text"
           placeholder="New folder name"

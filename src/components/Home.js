@@ -11,6 +11,7 @@ import {
   getID,
   getEmails,
 } from "../api";
+import "../new.css";
 
 // Access environment variables
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
@@ -433,7 +434,7 @@ const Home = ({
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+    <div className="home-container">
       {loading ? (
         <div style={{ width: "30%", padding: "10px" }}>
           <h2>Folders</h2>
@@ -450,27 +451,12 @@ const Home = ({
           onMoveFolder={handleMoveFolder}
           onReorderFolders={handleReorderFolders}
           onMoveEmail={handleMoveEmail}
-          style={{
-            width: "30%",
-            overflowY: "auto", // Add vertical scroll
-            height: "100vh",
-          }}
         />
       )}
 
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "20px",
-          height: "100vh",
-        }}
-      >
+      <div className="reader-container">
         <Reader email={selectedEmail} />
-        <button
-          onClick={handleSignoutClick}
-          style={{ position: "fixed", top: 10, right: 10 }}
-        >
+        <button className="signout-button" onClick={handleSignoutClick}>
           Sign out
         </button>
       </div>
