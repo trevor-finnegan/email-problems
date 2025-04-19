@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import DOMPurify from "dompurify";
 import PropTypes from "prop-types";
 import EmailResponse from "./EmailResponse";
@@ -13,7 +13,11 @@ const getEmailBody = (payload) => {
     for (let part of parts) {
       if (part.mimeType === "text/html" && part.body.data) {
         bodyData = part.body.data;
-      } else if (part.mimeType === "text/plain" && part.body.data && !bodyData) {
+      } else if (
+        part.mimeType === "text/plain" &&
+        part.body.data &&
+        !bodyData
+      ) {
         bodyData = part.body.data;
       } else if (part.mimeType?.startsWith("image/")) {
         images[part.body.attachmentId] = {
@@ -36,7 +40,9 @@ const getEmailBody = (payload) => {
 
   try {
     const binaryString = atob(bodyData.replace(/-/g, "+").replace(/_/g, "/"));
-    const bytes = new Uint8Array([...binaryString].map((char) => char.charCodeAt(0)));
+    const bytes = new Uint8Array(
+      [...binaryString].map((char) => char.charCodeAt(0))
+    );
     return new TextDecoder("utf-8").decode(bytes);
   } catch (e) {
     return bodyData;
@@ -51,12 +57,21 @@ const EmailDetails = ({ email }) => {
   const [isLoadingActions, setIsLoadingActions] = useState(false);
 
   const safeEmail = email || {};
-  const subject = safeEmail.payload?.headers?.find((h) => h.name === "Subject")?.value || "No Subject";
-  const from = safeEmail.payload?.headers?.find((h) => h.name === "From")?.value || "Unknown Sender";
-  const to = safeEmail.payload?.headers?.find((h) => h.name === "To")?.value || "Unknown Recipient";
-  const date = safeEmail.payload?.headers?.find((h) => h.name === "Date")?.value || "Unknown Date";
+  const subject =
+    safeEmail.payload?.headers?.find((h) => h.name === "Subject")?.value ||
+    "No Subject";
+  const from =
+    safeEmail.payload?.headers?.find((h) => h.name === "From")?.value ||
+    "Unknown Sender";
+  const to =
+    safeEmail.payload?.headers?.find((h) => h.name === "To")?.value ||
+    "Unknown Recipient";
+  const date =
+    safeEmail.payload?.headers?.find((h) => h.name === "Date")?.value ||
+    "Unknown Date";
   const rawBody = getEmailBody(safeEmail.payload);
   const sanitizedBody = DOMPurify.sanitize(rawBody);
+  const containerRef = useRef(null);
 
   const progress = useMemo(() => {
     if (!actionItems.length) return 0;
@@ -69,20 +84,38 @@ const EmailDetails = ({ email }) => {
     setActionItems([]);
   }, [email]);
 
+  useEffect(() => {
+    // Scroll to top when email changes
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [email]);
+
   const fetchSummary = async () => {
     setIsLoadingSummary(true);
     try {
-      const messageIdHeader = email?.payload?.headers?.find(h => h.name === "Message-ID")?.value;
+      const messageIdHeader = email?.payload?.headers?.find(
+        (h) => h.name === "Message-ID"
+      )?.value;
       if (!messageIdHeader) return;
 
-      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const res = await fetch(
+        `http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`
+      );
       const { id } = await res.json();
       if (!id) return;
 
-      const summaryRes = await fetch(`http://localhost:5001/emails/${id}/summarize`, { method: "POST" });
+      const summaryRes = await fetch(
+        `http://localhost:5001/emails/${id}/summarize`,
+        { method: "POST" }
+      );
       const summaryJson = await summaryRes.json();
 
-      setSummary(summaryJson.success ? summaryJson.summary : "Failed to generate summary.");
+      setSummary(
+        summaryJson.success
+          ? summaryJson.summary
+          : "Failed to generate summary."
+      );
     } catch (err) {
       console.error("Summary fetch error:", err);
       setSummary("Error fetching summary.");
@@ -94,21 +127,28 @@ const EmailDetails = ({ email }) => {
   const fetchActionItems = async () => {
     setIsLoadingActions(true);
     try {
-      const messageIdHeader = email?.payload?.headers?.find(h => h.name === "Message-ID")?.value;
+      const messageIdHeader = email?.payload?.headers?.find(
+        (h) => h.name === "Message-ID"
+      )?.value;
       if (!messageIdHeader) return;
 
-      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const res = await fetch(
+        `http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`
+      );
       const { id } = await res.json();
       if (!id) return;
 
-      const actionRes = await fetch(`http://localhost:5001/emails/${id}/action-items`, { method: "POST" });
+      const actionRes = await fetch(
+        `http://localhost:5001/emails/${id}/action-items`,
+        { method: "POST" }
+      );
       const actionJson = await actionRes.json();
 
       if (actionJson.success) {
         let cleaned = actionJson.actionItems.map((item, index) => ({
           id: index + 1,
           text: item.text.replace(/^[-•\d.]*\s*/, "").trim(),
-          completed: false
+          completed: false,
         }));
         setActionItems(cleaned.slice(0, 4)); // Limit to 4
       } else {
@@ -123,8 +163,8 @@ const EmailDetails = ({ email }) => {
   };
 
   const handleToggle = (id) => {
-    setActionItems(prev =>
-      prev.map(item =>
+    setActionItems((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, completed: !item.completed } : item
       )
     );
@@ -133,15 +173,34 @@ const EmailDetails = ({ email }) => {
   if (!email) return <p>Select an email to view its content.</p>;
 
   return (
-    <div style={{ flex: 1, padding: "20px", overflowY: "auto", height: "calc(100vh - 40px)" }}>
+    <div
+      ref={containerRef}
+      style={{
+        flex: 1,
+        padding: "20px",
+        overflowY: "auto",
+        height: "calc(100vh - 40px)",
+      }}
+    >
       <h3>{subject}</h3>
-      <p><strong>From:</strong> {from}</p>
-      <p><strong>To:</strong> {to}</p>
-      <p><strong>Date:</strong> {date}</p>
+      <p>
+        <strong>From:</strong> {from}
+      </p>
+      <p>
+        <strong>To:</strong> {to}
+      </p>
+      <p>
+        <strong>Date:</strong> {date}
+      </p>
 
       <hr />
       <div style={{ marginTop: "20px" }}>
-        <button onClick={() => setShowReply(true)} style={{ marginRight: "10px" }}>Respond</button>
+        <button
+          onClick={() => setShowReply(true)}
+          style={{ marginRight: "10px" }}
+        >
+          Respond
+        </button>
         <button>Mark as Task</button>
       </div>
 
@@ -149,53 +208,60 @@ const EmailDetails = ({ email }) => {
 
       {!showReply && (
         <>
-        <h4>Summary:</h4>
-        <p>{isLoadingSummary ? "Loading..." : summary}</p>
-        <button
-          onClick={fetchSummary}
-          style={{ marginBottom: "10px" }}
-          disabled={isLoadingSummary || summary !== "No summary generated."}
-        >
-          Generate Summary
-        </button>
+          <h4>Summary:</h4>
+          <p>{isLoadingSummary ? "Loading..." : summary}</p>
+          <button
+            onClick={fetchSummary}
+            style={{ marginBottom: "10px" }}
+            disabled={isLoadingSummary || summary !== "No summary generated."}
+          >
+            Generate Summary
+          </button>
 
-        <h4>Action Items:</h4>
-        {isLoadingActions ? (
-          <p>Loading action items...</p>
-        ) : (
-          <>
-            <ul>
-              {actionItems.map((item) => (
-                <li key={item.id}>
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => handleToggle(item.id)}
-                  />{" "}
-                  {item.text}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        <button
-          onClick={fetchActionItems}
-          disabled={isLoadingActions || actionItems.length > 0}
-        >
-          Generate Action Items
-        </button>
-
+          <h4>Action Items:</h4>
+          {isLoadingActions ? (
+            <p>Loading action items...</p>
+          ) : (
+            <>
+              <ul>
+                {actionItems.map((item) => (
+                  <li key={item.id}>
+                    <input
+                      type="checkbox"
+                      checked={item.completed}
+                      onChange={() => handleToggle(item.id)}
+                    />{" "}
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <button
+            onClick={fetchActionItems}
+            disabled={isLoadingActions || actionItems.length > 0}
+          >
+            Generate Action Items
+          </button>
 
           <div style={{ margin: "10px 0" }}>
             <strong>Progress:</strong> {progress}%
-            <div style={{
-              background: "#ddd", borderRadius: "8px", overflow: "hidden", height: "20px", marginTop: "4px"
-            }}>
-              <div style={{
-                width: `${progress}%`,
-                height: "100%",
-                background: "#4caf50"
-              }} />
+            <div
+              style={{
+                background: "#ddd",
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: "20px",
+                marginTop: "4px",
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: "100%",
+                  background: "#4caf50",
+                }}
+              />
             </div>
           </div>
         </>
@@ -232,4 +298,3 @@ EmailDetails.propTypes = {
 };
 
 export default EmailDetails;
-
