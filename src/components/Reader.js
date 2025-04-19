@@ -194,12 +194,11 @@ const EmailDetails = ({ email }) => {
       </p>
 
       <hr />
-      <div style={{ marginTop: "20px" }}>
+      <div className="button-bar">
         <button
           onClick={() => setShowReply(true)}
           style={{ marginRight: "10px" }}
-        >
-          Respond
+        >Respond
         </button>
         <button>Mark as Task</button>
       </div>
@@ -244,22 +243,13 @@ const EmailDetails = ({ email }) => {
             Generate Action Items
           </button>
 
-          <div style={{ margin: "10px 0" }}>
+          <div className="progress-container">
             <strong>Progress:</strong> {progress}%
-            <div
-              style={{
-                background: "#ddd",
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: "20px",
-                marginTop: "4px",
-              }}
-            >
+            <div className="progress-bar">
               <div
+                className="progress-fill"
                 style={{
                   width: `${progress}%`,
-                  height: "100%",
-                  background: "#4caf50",
                 }}
               />
             </div>

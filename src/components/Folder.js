@@ -87,10 +87,7 @@ const Folder = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          style={{
-            marginLeft: `${level * 15}px`,
-            ...provided.draggableProps.style,
-          }}
+          className={`folder-level-${level}`}
         >
           <div>
             {isDraggable && (
