@@ -133,7 +133,7 @@ const EmailDetails = ({ email }) => {
   if (!email) return <p>Select an email to view its content.</p>;
 
   return (
-    <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
+    <div style={{ flex: 1, padding: "20px", overflowY: "auto", height: "calc(100vh - 40px)" }}>
       <h3>{subject}</h3>
       <p><strong>From:</strong> {from}</p>
       <p><strong>To:</strong> {to}</p>
