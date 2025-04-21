@@ -172,6 +172,7 @@ const Folder = ({
                               key={item.id}
                               email={item.data}
                               onSelectEmail={(email) => {
+                                email.isNew = false;
                                 const enhancedEmail = {
                                   ...email,
                                   summary: "This email informs you about scheduled system maintenance, including the date, time, and potential service disruptions.",
