@@ -235,6 +235,7 @@ const Home = ({
               { name: "From", value: email.sender_email },
               { name: "To", value: email.recipient_email },
               { name: "Message-ID", value: email.google_message_id },
+              { name: "Date", value: email.sent_at },
             ],
             body: {
               data: email.body,
