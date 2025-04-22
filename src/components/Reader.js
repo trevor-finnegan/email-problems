@@ -43,7 +43,9 @@ const getEmailBody = (payload) => {
   }
 };
 
+
 const EmailDetails = ({ email }) => {
+  
   const [showReply, setShowReply] = useState(false);
   const [summary, setSummary] = useState("No summary generated.");
   const [actionItems, setActionItems] = useState([]);
@@ -55,9 +57,24 @@ const EmailDetails = ({ email }) => {
   const from = safeEmail.payload?.headers?.find((h) => h.name === "From")?.value || "Unknown Sender";
   const to = safeEmail.payload?.headers?.find((h) => h.name === "To")?.value || "Unknown Recipient";
   const date = safeEmail.payload?.headers?.find((h) => h.name === "Date")?.value || "Unknown Date";
-  const rawBody = getEmailBody(safeEmail.payload);
-  const sanitizedBody = DOMPurify.sanitize(rawBody);
 
+  const rawBody = getEmailBody(safeEmail.payload);
+  const cidImages = safeEmail.cidImages || {};
+
+  const processCidImages = (html, images = {}) => {
+    return html.replace(/src=["']cid:(.+?)["']/g, (_, cid) => {
+      const image = images[cid];
+      if (image) {
+        return `src="data:${image.mimeType};base64,${image.data}"`;
+      }
+      return `src=""`; // fallback if not found
+    });
+  };
+  
+  const processedBody = processCidImages(rawBody, cidImages);
+  const sanitizedBody = DOMPurify.sanitize(processedBody);
+
+  
   const progress = useMemo(() => {
     if (!actionItems.length) return 0;
     const done = actionItems.filter((a) => a.completed).length;
@@ -142,7 +159,7 @@ const EmailDetails = ({ email }) => {
       <hr />
       <div style={{ marginTop: "20px" }}>
         <button onClick={() => setShowReply(true)} style={{ marginRight: "10px" }}>Respond</button>
-        <button>Mark as Task</button>
+        <button style={{ marginRight: "30px" }} >Mark as Task</button>
       </div>
 
       <hr />

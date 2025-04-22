@@ -292,5 +292,54 @@ router.post('/:id/action-items', async (req, res) => {
     });
   }
 });
+router.post('/:id/respond', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const emailRes = await pool.query(
+      'SELECT body FROM email_app.emails WHERE id = $1',
+      [id]
+    );
+
+    if (emailRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    const { body } = emailRes.rows[0];
+
+    const prompt = `Generate an appropriate response to this email. Keep it professional and concise. Here's the email:\n\n${body}`;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:5001",
+        "X-Title": "Email Client"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat-v3-0324:free",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const result = await response.json();
+    console.log("Response Draft raw result:", JSON.stringify(result, null, 2));
+
+    if (!response.ok || !result.choices?.[0]?.message?.content) {
+      throw new Error(result.error?.message || "No draft returned.");
+    }
+
+    res.json({ success: true, response: result.choices[0].message.content });
+
+  } catch (err) {
+    console.error('Response generation error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Response generation failed',
+      details: err.message
+    });
+  }
+});
 
 module.exports = router;
