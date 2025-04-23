@@ -114,6 +114,7 @@ const Home = ({
     // Emails automitically added to relevant folders
     let matchingFolderId = null;
     for (const folder of folders) {
+      if (folder.id === "inbox") continue; // Skip the inbox folder
       const folderName = folder.name.toLowerCase();
       if (
         subject?.toLowerCase().includes(folderName) ||
