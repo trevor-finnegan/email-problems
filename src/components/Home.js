@@ -111,13 +111,34 @@ const Home = ({
 
     const body = getEmailBody(emailData.payload);
 
+    // Emails automitically added to relevant folders
+    let matchingFolderId = null;
+    for (const folder of folders) {
+      if (folder.id === "inbox") continue; // Skip the inbox folder
+      const folderName = folder.name.toLowerCase();
+      if (
+        subject?.toLowerCase().includes(folderName) ||
+        body?.toLowerCase().includes(folderName) ||
+        sender_email?.toLowerCase().includes(folderName)
+      ) {
+        matchingFolderId = folder.id;
+        const emailToFolder = {
+          type: "email",
+          id: emailData.id,
+          data: emailData,
+        };
+        folder.items.push(emailToFolder);
+        break;
+      }
+    }
+
     const emailDataToSend = {
       sender_email: sender_email,
       google_message_id: google_message_id,
       recipient_email: userEmail,
       subject: subject,
       body: body,
-      folder_id: null,
+      folder_id: matchingFolderId,
     };
 
     await addEmail(emailDataToSend); // Send email data to the server
