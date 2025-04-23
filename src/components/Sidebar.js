@@ -1,16 +1,23 @@
 import React, { useState } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import Folder from "./Folder";
-import { addFolder, getID, getFolderID, updateFolderID, getEmailId } from "../api";
+import {
+  addFolder,
+  getID,
+  getFolderID,
+  updateFolderID,
+  getEmailId,
+} from "../api";
 import { gapi } from "gapi-script";
+import "../new.css";
 
 // Add these helper functions at the top of the file
 const decodeBase64 = (data) => {
   try {
-    return atob(data.replace(/-/g, '+').replace(/_/g, '/'));
+    return atob(data.replace(/-/g, "+").replace(/_/g, "/"));
   } catch (e) {
-    console.error('Error decoding base64:', e);
-    return '';
+    console.error("Error decoding base64:", e);
+    return "";
   }
 };
 
@@ -53,7 +60,9 @@ const Sidebar = ({
 
     if (!destination) return; // Dropped outside the list, do nothing
 
-    const destinationFolder = folders.find(folder => folder.id.toString() === destination.droppableId);
+    const destinationFolder = folders.find(
+      (folder) => folder.id.toString() === destination.droppableId
+    );
 
     if (type === "folder") {
       if (source.droppableId === destination.droppableId) {
@@ -77,9 +86,8 @@ const Sidebar = ({
 
     if (type === "email") {
       onMoveEmail(draggableId, source.droppableId, destination.droppableId);
-      
-      if(destinationFolder.name !== "Inbox"){
-        
+
+      if (destinationFolder.name !== "Inbox") {
         const emailData = findEmailById(folders, draggableId);
         console.log("draggableId:", draggableId); // Log draggableId
 
@@ -87,7 +95,10 @@ const Sidebar = ({
 
         const folder_name = destinationFolder.name; // Get the name of the destination folder
 
-        const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+        const user = gapi.auth2
+          .getAuthInstance()
+          .currentUser.get()
+          .getBasicProfile();
         const email = user.getEmail();
         const userID = await getID(email);
         console.log("User ID:", userID); // Log user ID
@@ -101,18 +112,18 @@ const Sidebar = ({
         await updateFolderID(folderID, emailID);
 
         window.location.reload();
-      } 
+      }
     }
   };
 
   return (
     <div
-      style={{ width: "30%", borderRight: "1px solid #ccc", padding: "10px" }}
+      className="sidebar"
     >
       <h2>Folders</h2>
 
       {/* Folder creation */}
-      <div style={{ marginBottom: "10px" }}>
+      <div className="folder-creation">
         <input
           type="text"
           placeholder="New folder name"
@@ -123,15 +134,22 @@ const Sidebar = ({
         <button
           onClick={async () => {
             if (newFolderName.trim() !== "") {
-              const user = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
+              const user = gapi.auth2
+                .getAuthInstance()
+                .currentUser.get()
+                .getBasicProfile();
               const email = user.getEmail();
               const userID = await getID(email);
-              const newFolderData = await addFolder(userID, newFolderName, "custom", null);
-              const newFolderId = newFolderData.id; 
+              const newFolderData = await addFolder(
+                userID,
+                newFolderName,
+                "custom",
+                null
+              );
+              const newFolderId = newFolderData.id;
               console.log("New folder ID:", newFolderId); // Log the new folder ID
               onCreateFolder(newFolderName, newFolderId);
               setNewFolderName("");
-
             } else {
               alert("Folder name cannot be empty!");
             }

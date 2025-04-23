@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import "../EmailResponse.css";
 
 const EmailResponse = ({ originalEmail, onClose }) => {
-  const fromHeader = originalEmail?.payload?.headers.find(h => h.name === "From")?.value || "";
-  const subjectHeader = originalEmail?.payload?.headers.find(h => h.name === "Subject")?.value || "";
+  const fromHeader =
+    originalEmail?.payload?.headers.find((h) => h.name === "From")?.value || "";
+  const subjectHeader =
+    originalEmail?.payload?.headers.find((h) => h.name === "Subject")?.value ||
+    "";
 
   const [to, setTo] = useState(fromHeader);
   const [subject, setSubject] = useState(`Re: ${subjectHeader}`);
@@ -27,14 +30,18 @@ const EmailResponse = ({ originalEmail, onClose }) => {
     setIsGenerating(true);
 
     try {
-      const messageIdHeader = originalEmail.payload?.headers.find(h => h.name === "Message-ID")?.value;
+      const messageIdHeader = originalEmail.payload?.headers.find(
+        (h) => h.name === "Message-ID"
+      )?.value;
 
       if (!messageIdHeader) {
         alert("Missing Message-ID in email headers.");
         return;
       }
 
-      const res = await fetch(`http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`);
+      const res = await fetch(
+        `http://localhost:5001/emails/getEmailId?google_message_id=${messageIdHeader}`
+      );
       const { id } = await res.json();
 
       if (!id) {
@@ -42,9 +49,12 @@ const EmailResponse = ({ originalEmail, onClose }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5001/emails/${id}/respond`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `http://localhost:5001/emails/${id}/respond`,
+        {
+          method: "POST",
+        }
+      );
 
       const result = await response.json();
 
@@ -72,8 +82,15 @@ const EmailResponse = ({ originalEmail, onClose }) => {
         <input
           type="text"
           value={to}
-          onChange={(e) => setTo(e.target.value)}
-          style={{ width: `${Math.max(to.length, 10)}ch` }}
+          onChange={(e) => {
+            setTo(e.target.value);
+            e.target.style.setProperty(
+              "--input-width",
+              `${Math.max(e.target.value.length, 10)}ch`
+            );
+          }}
+          className="email-response-input"
+          style={{ "--input-width": "10ch" }} // Fallback value
         />
       </div>
 
@@ -82,8 +99,12 @@ const EmailResponse = ({ originalEmail, onClose }) => {
         <input
           type="text"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          style={{ width: `${Math.max(subject.length, 10)}ch` }}
+          onChange={(e) => {
+            setSubject(e.target.value);
+            e.target.style.setProperty('--input-width', `${Math.max(e.target.value.length, 10)}ch`);
+          }}
+          className="email-response-input"
+          style={{ '--input-width': '10ch' }} // Fallback value
         />
       </div>
 
@@ -96,37 +117,19 @@ const EmailResponse = ({ originalEmail, onClose }) => {
           if (bodyRef.current) {
             bodyRef.current.style.height = "auto"; // Reset height first
             bodyRef.current.style.height = bodyRef.current.scrollHeight + "px"; // Set to full content height
-        }
+          }
         }}
         placeholder="Compose your message..."
         rows={1}
       />
 
-
-        <div className="toolbar">
+      <div className="toolbar">
         <button onClick={handleGenerateDraft} disabled={isGenerating}>
           {isGenerating ? "🔄 Generating..." : "Generate"}
         </button>
-
-        <button><b>B</b></button>
-        <button><i>I</i></button>
-        <button><u>U</u></button>
-        <button><s>S</s></button>
-        <select>
-          <option>style</option>
-          <option>Heading</option>
-          <option>Quote</option>
-        </select>
-        <button>• List</button>
-        <button>1. List</button>
-        <button>↺</button>
-        <button>↻</button>
-        <button>🖼️</button>
-        <button>🙂</button>
       </div>
 
       <div className="action-buttons">
-        <button>Save Draft</button>
         <button>Send</button>
         <button onClick={onClose}>Cancel</button>
       </div>
@@ -135,5 +138,3 @@ const EmailResponse = ({ originalEmail, onClose }) => {
 };
 
 export default EmailResponse;
-
-

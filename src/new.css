@@ -1,0 +1,227 @@
+/* Global styles */
+body {
+   margin: 0;
+   background-color: #f4f4f4;
+   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+     Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   line-height: 1.6;
+   color: #333;
+ }
+ 
+ /* Login Page */
+ .login-page {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   height: 100vh;
+ }
+ 
+ .login-box {
+   background-color: #f8fbfd;
+   border: 1px solid #90caf9;
+   padding: 2rem;
+   border-radius: 8px;
+   box-shadow: 0 4px 12px rgba(144, 202, 249, 0.15);
+   text-align: center;
+ }
+ 
+ .google-login-container button {
+   background-color: #2196f3;
+   color: white;
+   border: none;
+   padding: 0.8rem 1.5rem;
+   border-radius: 4px;
+   cursor: pointer;
+   transition: all 0.3s ease;
+ }
+ 
+ .google-login-container button:hover {
+   background-color: #1976d2;
+   transform: translateY(-1px);
+   box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+ }
+ 
+ /* Email Items */
+ .email-item {
+   background-color: #f2f9ff;
+   color: #34495e;
+   padding: 12px;
+   margin: 4px 0;
+   border-radius: 6px;
+   border: 1px solid #b9deff;
+   transition: all 0.2s ease;
+   cursor: pointer;
+ }
+ 
+ .email-item:hover {
+   background-color: #aad3ff;
+   transform: translateX(3px);
+   box-shadow: 0 2px 4px rgba(33, 150, 243, 0.1);
+ }
+ 
+ .email-selected {
+   background-color: #cfe8fc !important;
+   border-left: 4px solid #2196f3;
+ }
+ 
+ /* Progress bar */
+ .progress-bar {
+   background: #ffffff;
+   border-radius: 8px;
+   overflow: hidden;
+   height: 20px;
+   margin-top: 4px;
+ }
+ 
+ .progress-fill {
+   height: 100%;
+   background: #4caf50;
+   transition: width 0.3s ease;
+ }
+
+ .sidebar {
+   width: 30%;
+   padding: 10px;
+   height: 100vh;
+   overflow-y: auto;
+   background-color: #d4f4ff;
+ }
+ 
+ .folder-container { 
+   margin-left: 15px;
+ }
+
+ /* Dynamic indentation */
+[class^="folder-level-"] {
+   margin-left: 0px;
+ }
+ 
+ .folder-level-1 { margin-left: 15px; }
+ .folder-level-2 { margin-left: 30px; }
+ /* Add more levels as needed */
+ 
+ .folder-header {
+   cursor: pointer;
+   padding: 5px 0;
+   height: 40px;
+   display: flex;
+   align-items: center;
+   box-sizing: border-box;
+ }
+ 
+ .drag-handle {
+   font-size: 12px;
+   margin-right: 1px;
+   opacity: 1;
+   cursor: move;
+ }
+ 
+ .drop-area {
+   min-height: 50px;
+   padding: 10px;
+ }
+ 
+ .folder-actions button {
+   margin-left: 10px;
+   padding: 4px 8px;
+   background-color: #d4f4ff;
+   border: 1px solid #d4f4ff;
+   border-radius: 4px;
+   cursor: pointer;
+ }
+
+ .button-bar {
+   background-color: #d4f4ff;
+   border: 1px solid #d4f4ff;
+   cursor: pointer;
+ }
+ 
+ .search-input {
+   padding: 5px;
+   width: 200px;
+   margin-top: 10px;
+ }
+
+ .home-container {
+   display: flex;
+   height: 100vh;
+   overflow: hidden;
+ }
+ 
+ .reader-container {
+   flex: 1;
+   overflow-y: auto;
+   padding: 20px;
+   height: 100vh;
+   position: relative;
+   background-color: #d4f4ff;
+ }
+ 
+ .signout-button {
+   position: fixed;
+   top: 10px;
+   right: 40px;
+   padding: 8px 16px;
+   background-color: #2196f3;
+   color: white;
+   border: none;
+   border-radius: 4px;
+   cursor: pointer;
+   transition: background-color 0.2s ease;
+ }
+ 
+ .signout-button:hover {
+   background-color: #1976d2;
+ }
+
+ .email-response input[type="text"] {
+   width: var(--input-width, 10ch);
+   transition: width 0.2s ease;
+ }
+
+ /* Add these rules */
+.email-response-input {
+   width: var(--input-width);
+   min-width: 10ch;
+   transition: width 0.2s ease;
+   padding: 4px 8px;
+   border-radius: 4px;
+   margin-left: 8px;
+ }
+ 
+ .email-response-input:focus {
+   outline: 2px solid #68bbff;
+   border-color: transparent;
+ }
+
+.main-container {
+   display: flex;
+   height: 100vh;
+   overflow: hidden;
+ }
+
+ .loading-sidebar {
+   width: 30%;
+   padding: 10px;
+ }
+
+ .loading-message {
+   padding: 20px;
+   color: #666;
+   font-style: italic;
+ }
+
+ .flex-column {
+   display: flex;
+   flex-direction: column;
+ }
+ 
+ .scroll-y {
+   overflow-y: auto;
+ }
+ 
+ .padded {
+   padding: 20px;
+ }
