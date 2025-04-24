@@ -7,6 +7,7 @@ import {
   getFolderID,
   updateFolderID,
   getEmailId,
+  getEmails
 } from "../api";
 import { gapi } from "gapi-script";
 import "../new.css";
@@ -31,6 +32,7 @@ const Sidebar = ({
   onMoveFolder,
   onReorderFolders,
   onMoveEmail,
+  setFolders,
 }) => {
   const [newFolderName, setNewFolderName] = useState("");
 
@@ -111,7 +113,39 @@ const Sidebar = ({
 
         await updateFolderID(folderID, emailID);
 
-        window.location.reload();
+        const newEmailData = await getEmails(folderID);
+
+        const currentFolderItems = newEmailData.map((email) => ({
+          id: email.google_message_id,
+          type: "email",
+          data: {
+            id: email.google_message_id,
+            payload: {
+              headers: [
+                { name: "Subject", value: email.subject },
+                { name: "From", value: email.sender_email },
+                { name: "To", value: email.recipient_email },
+                { name: "Message-ID", value: email.google_message_id },
+              ],
+              body: {
+                data: email.body,
+              },
+            },
+          },
+        }));
+
+        const newFolder = {
+          id: folderID,
+          name: folder_name,
+          type: "folder",
+          items: currentFolderItems,
+          isDraggable: true,
+        };
+
+        const index = folders.indexOf(destinationFolder);
+        folders[index] = newFolder;
+
+        setFolders(folders);
       }
     }
   };

@@ -494,6 +494,7 @@ if (!baseFolders.some((folder) => folder.id === "sent")) {
           onMoveFolder={handleMoveFolder}
           onReorderFolders={handleReorderFolders}
           onMoveEmail={handleMoveEmail}
+          setFolders={updateFolders}
         />
       )}
 
