@@ -17,7 +17,7 @@ import "../new.css";
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
 const CLIENT_ID =
   "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
+  const SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
 
 const Home = ({
   setIsAuthenticated,
@@ -30,6 +30,7 @@ const Home = ({
   onReorderFolders,
   onMoveEmail,
 }) => {
+  const [accessToken, setAccessToken] = useState(null);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [, setIsGapiInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -277,16 +278,31 @@ const Home = ({
       // Update folders with the combined emails
 
       let baseFolders = folders;
-      if (!folders.some((folder) => folder.id === "inbox")) {
-        baseFolders = [
-          {
-            id: "inbox",
-            name: "Inbox",
-            items: [],
-          },
-          ...folders,
-        ];
-      }
+
+// Ensure Inbox exists
+if (!folders.some((folder) => folder.id === "inbox")) {
+  baseFolders = [
+    {
+      id: "inbox",
+      name: "Inbox",
+      items: [],
+    },
+    ...baseFolders,
+  ];
+}
+
+// Ensure Sent folder exists
+if (!baseFolders.some((folder) => folder.id === "sent")) {
+  baseFolders = [
+    {
+      id: "sent",
+      name: "Sent",
+      items: [],
+    },
+    ...baseFolders,
+  ];
+}
+
       const mergedFolders = mergeWithGmailData(baseFolders, allEmails);
       updateFolders(mergedFolders);
     } catch (error) {
@@ -316,6 +332,11 @@ const Home = ({
             authInstance.isSignedIn.listen(setIsAuthenticated);
 
             if (authInstance.isSignedIn.get()) {
+              const user = authInstance.currentUser.get();
+              const token = user.getAuthResponse().access_token;
+              console.log("Access Token: ", token);
+              setAccessToken (token);
+
               fetchMessages();
             }
           })
@@ -477,7 +498,7 @@ const Home = ({
       )}
 
       <div className="reader-container">
-        <Reader email={selectedEmail} />
+        <Reader email={selectedEmail} accessToken={accessToken} />
         <button className="signout-button" onClick={handleSignoutClick}>
           Sign out
         </button>

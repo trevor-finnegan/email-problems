@@ -19,6 +19,7 @@
     ├── api.js
     ├── components
     │   ├── Email.js
+    |   ├── EmailResponse.js
     │   ├── Folder.js
     │   ├── Home.js
     │   ├── Login.js
@@ -32,4 +33,4 @@
     ├── test-respond.js
     └── test-summarize.js
 
-5 directories, 28 files
+5 directories, 29 files

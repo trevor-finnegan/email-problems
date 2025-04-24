@@ -341,5 +341,90 @@ router.post('/:id/respond', async (req, res) => {
     });
   }
 });
+router.post("/send", async (req, res) => {
+  try {
+    const { to, subject, body, accessToken } = req.body;
+
+    if (!to || !subject || !body || !accessToken) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Construct the email in RFC 5322 format
+    const emailLines = [`To: ${to}`, `Subject: ${subject}`, "", body];
+    const emailContent = emailLines.join("\r\n");
+
+    const encodedEmail = Buffer.from(emailContent)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    // Send email via Gmail API
+    const gmailResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ raw: encodedEmail }),
+    });
+
+    const gmailData = await gmailResponse.json();
+
+    if (!gmailResponse.ok) {
+      console.error("Gmail API error:", gmailData);
+      return res.status(500).json({ success: false, error: "Failed to send email" });
+    }
+
+    // Get sender email using accessToken
+    const profileResponse = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const profileData = await profileResponse.json();
+    const sender_email = profileData.emailAddress;
+
+    // Get user ID from database
+    const userResult = await pool.query("SELECT id FROM email_app.users WHERE email = $1", [sender_email]);
+    const user_id = userResult.rows[0]?.id;
+    if (!user_id) {
+      return res.status(400).json({ error: "User not found in database" });
+    }
+
+    // Get Sent folder ID for user
+    const folderResult = await pool.query(
+      "SELECT id FROM email_app.folders WHERE user_id = $1 AND name = 'Sent'",
+      [user_id]
+    );
+    const folder_id = folderResult.rows[0]?.id;
+    if (!folder_id) {
+      return res.status(400).json({ error: "Sent folder not found for user" });
+    }
+
+    // Insert sent email into database
+    await pool.query(
+      `INSERT INTO email_app.emails (
+        sender_email, recipient_email, subject, body, google_message_id, folder_id, search_vector
+      ) VALUES ($1, $2, $3, $4, $5, $6, to_tsvector('english', $7 || ' ' || $8 || ' ' || $9))`,
+      [
+        sender_email,
+        to,
+        subject,
+        body,
+        gmailData.id,
+        folder_id,
+        sender_email,
+        subject,
+        extractReadableText(body),
+      ]
+    );
+
+    res.json({ success: true, message: "Email sent and saved to Sent folder.", data: gmailData });
+  } catch (err) {
+    console.error("Send email error:", err);
+    res.status(500).json({ success: false, error: "Server error sending email" });
+  }
+});
 
 module.exports = router;

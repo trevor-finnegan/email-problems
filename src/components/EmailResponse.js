@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../EmailResponse.css";
 
-const EmailResponse = ({ originalEmail, onClose }) => {
+const EmailResponse = ({ originalEmail, onClose, accessToken }) => {
   const fromHeader =
     originalEmail?.payload?.headers.find((h) => h.name === "From")?.value || "";
   const subjectHeader =
@@ -71,6 +71,41 @@ const EmailResponse = ({ originalEmail, onClose }) => {
     }
   };
 
+  const handleSendEmail = async () => {
+    console.log("Access Token being used to send:", accessToken);
+    console.log("Sending to:", to);
+    console.log("Subject:", subject);
+    console.log("Body:", body);
+  
+    try {
+      const response = await fetch('http://localhost:5001/emails/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          body,
+          accessToken,
+        }),
+      });
+  
+      const result = await response.json();
+  
+      if (result.success) {
+        alert('Email sent successfully.');
+        onClose();
+      } else {
+        console.error('Failed to send:', result);
+        alert('Failed to send email: ' + result.error);
+      }
+    } catch (err) {
+      console.error('Send email error:', err);
+      alert('Error sending email.');
+    }
+  };
+  
   if (!originalEmail) return null;
 
   return (
@@ -130,7 +165,7 @@ const EmailResponse = ({ originalEmail, onClose }) => {
       </div>
 
       <div className="action-buttons">
-        <button>Send</button>
+        <button onClick={handleSendEmail}>Send</button>
         <button onClick={onClose}>Cancel</button>
       </div>
     </div>
