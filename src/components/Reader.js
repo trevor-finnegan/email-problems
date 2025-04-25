@@ -265,7 +265,6 @@ const EmailDetails = ({ email }) => {
         <EmailResponse
           originalEmail={email}
           onClose={() => setShowReply(false)}
-          accessToken={accessToken}
         />
       )}
 

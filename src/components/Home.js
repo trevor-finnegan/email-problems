@@ -17,7 +17,7 @@ import "../new.css";
 const API_KEY = "AIzaSyDK9rjobYN4JgJkfwwfALtBmqD-fEAIX-A";
 const CLIENT_ID =
   "100724291989-599ausdmuaaub1rghcf467dg1ekhv3v7.apps.googleusercontent.com";
-  const SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
+  const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
 const Home = ({
   setIsAuthenticated,

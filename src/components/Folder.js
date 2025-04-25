@@ -115,7 +115,7 @@ const Folder = ({
                 {folder.name}
               </span>
             )}
-            {folder.name !== "Inbox" && (
+            {folder.name !== "Inbox" && folder.name !== "Sent" && (
               <>
                 <button onClick={() => setIsEditing(true)} style={{ marginLeft: "10px" }}>
                   Rename
