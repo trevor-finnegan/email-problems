@@ -145,42 +145,42 @@ const Home = ({
     await addEmail(emailDataToSend); // Send email data to the server
   };
 
-  // Function to merge Gmail data with existing folders
   const mergeWithGmailData = useCallback((currentFolders, emails) => {
     return currentFolders.map((folder) => {
       if (folder.id === "inbox" || folder.name === "Inbox") {
-        const emailItems = emails.map((msg) => ({
-          type: "email",
-          id: msg.id,
-          data: msg,
-        }));
-
-        // Avoid duplicates
+        const emailItems = emails
+          .filter((msg) => !msg.folder_id || msg.folder_id === null) // Only inbox emails
+          .map((msg) => ({
+            type: "email",
+            id: msg.id,
+            data: msg,
+          }));
+  
         const existingIds = new Set(folder.items?.map((item) => item.id) || []);
-        const newEmails = emailItems.filter(
-          (item) => !existingIds.has(item.id)
-        );
-
+        const newEmails = emailItems.filter((item) => !existingIds.has(item.id));
+  
         return { ...folder, items: [...(folder.items || []), ...newEmails] };
       }
+  
+      if (folder.id === "sent" || folder.name === "Sent") {
+        const emailItems = emails
+          .filter((msg) => msg.folder_id === folder.id) // Only sent emails
+          .map((msg) => ({
+            type: "email",
+            id: msg.id,
+            data: msg,
+          }));
+  
+        const existingIds = new Set(folder.items?.map((item) => item.id) || []);
+        const newEmails = emailItems.filter((item) => !existingIds.has(item.id));
+  
+        return { ...folder, items: [...(folder.items || []), ...newEmails] };
+      }
+  
       return folder;
     });
   }, []);
-
-  // Convert Gmail messages into a structured folder format
-  const transformMessagesToFolders = useCallback((messages) => {
-    return [
-      {
-        id: "inbox",
-        name: "Inbox",
-        items: messages.map((msg) => ({
-          type: "email",
-          id: msg.id,
-          data: msg,
-        })),
-      },
-    ];
-  }, []);
+  
 
   // Fetch Gmail messages
   const fetchMessages = useCallback(async () => {
@@ -250,6 +250,7 @@ const Home = ({
         const formattedDbEmails = dbEmails.map((email) => ({
           id: email.google_message_id,
           type: "email",
+          folder_id: email.folder_id,
 
           payload: {
             headers: [
@@ -294,12 +295,12 @@ if (!folders.some((folder) => folder.id === "inbox")) {
 // Ensure Sent folder exists
 if (!baseFolders.some((folder) => folder.id === "sent")) {
   baseFolders = [
+    ...baseFolders,
     {
       id: "sent",
       name: "Sent",
       items: [],
     },
-    ...baseFolders,
   ];
 }
 
